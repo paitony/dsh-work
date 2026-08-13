@@ -1,0 +1,48 @@
+# DeepSeek Harness desktop packaging (electron-builder).
+# Targets: macOS dmg+zip, Windows nsis installer, Linux AppImage+deb.
+# Local/CI builds are unsigned; add mac.identity / CSC_* env for release signing.
+appId: ai.deepseek.harness
+productName: DeepSeek Harness
+directories:
+  output: release
+files:
+  - lib/types/**
+  - config/agent-presets/**
+  - package.json
+  - "!**/*.map"
+asar: true
+# The harness links its profile fallback ($DSH_HOME/profiles/node_modules) to
+# packages by symlink and resolves imports from the unpacked tree; symlinks
+# cannot traverse into app.asar (a plain file at the OS level), and unpacked
+# packages must reach their own dependencies, so the whole dependency closure
+# lives as real directories.
+asarUnpack:
+  - node_modules/**
+npmRebuild: true
+# Architecture is chosen per build via the electron-builder CLI:
+#   --mac --arm64    Apple Silicon
+#   --mac --x64      Intel
+#   --mac --universal  one fat binary for both (merged by @electron/universal)
+# Native modules (node-pty, koffi, node-addon-*) ship one .node per arch and
+# cannot be lipo-merged, so they stay unmerged and the runtime picks the
+# arch-correct file.
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+    - zip
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  singleArchFiles: "**/*.node"
+win:
+  target:
+    - nsis
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  category: Development
+  target:
+    - AppImage
+    - deb
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
