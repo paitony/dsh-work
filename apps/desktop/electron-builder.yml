@@ -44,6 +44,7 @@ nsis:
   allowToChangeInstallationDirectory: true
 linux:
   category: Development
+  maintainer: paitony <paitony@users.noreply.github.com>
   syncDesktopName: true
   target:
     - AppImage

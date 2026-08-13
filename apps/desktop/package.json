@@ -2,7 +2,12 @@
   "name": "@deepseek-ai/dsh-desktop",
   "description": "DeepSeek Harness desktop shell: boots the dsh web composition inside Electron for Windows, macOS, and Linux",
   "desktopName": "deepseek-harness",
-  "author": "paitony",
+  "homepage": "https://github.com/paitony/dsh-work#readme",
+  "author": {
+    "name": "paitony",
+    "email": "paitony@users.noreply.github.com",
+    "url": "https://github.com/paitony"
+  },
   "version": "0.1.0-rc.5",
   "private": true,
   "type": "module",
