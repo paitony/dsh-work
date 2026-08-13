@@ -31,7 +31,7 @@ flowchart TB
 
     style WS fill:#dfd
     style PICKER fill:#fdd
-]
+```
 
 ## 分层
 
@@ -60,14 +60,14 @@ sequenceDiagram
     B->>B: healProfilesModuleFallback + loadProfile(web)
     B->>T: boot() 挂载 dsh-base + dsh-web-app + overlays
     T-->>W: webserver 绑定 127.0.0.1:0
-    B-->>M: url = http://127.0.0.1:&lt;port&gt;
+    B-->>M: loopback URL with an OS-assigned port
     M->>R: loadURL(url)
     R->>R: 解析 window.__DSH_BOOT__
     R->>T: 拉取 /plugins 客户端 bundle
     R->>T: /api 建立连接（fetch + WebSocket）
     R-->>U: 渲染完整 GUI（会话/工作区/设置）
     M->>M: 权限检测（TCC / Seatbelt / PowerShell）
-]
+```
 
 ## 目录结构
 
@@ -91,7 +91,6 @@ dsh-work/
 ├── patches/              # node-pty 等补丁
 ├── docs/                 # 本文档
 └── package.json          # pnpm workspace 根
-]
 
 ## 关键设计决策
 

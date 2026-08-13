@@ -23,6 +23,8 @@ pnpm --filter @deepseek-ai/dsh-desktop dev
 ```sh
 pnpm run build                        # 全量构建
 pnpm --filter @deepseek-ai/dsh-desktop smoke   # 冒烟测试
+pnpm --filter @deepseek-ai/dsh-desktop test:policy # Electron URL 策略回归测试
+pnpm --filter @deepseek-ai/dsh-desktop test:lifecycle # 重复 boot/dispose 生命周期测试
 pnpm --filter @deepseek-ai/dsh-desktop typecheck
 ```
 

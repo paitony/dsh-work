@@ -1,11 +1,15 @@
 # DeepSeek Harness Desktop
 
+中文文档: [README.zh.md](README.zh.md)
+
 The Electron desktop shell for [DeepSeek Harness](../../README.md): one installable
 app for Windows, macOS, and Linux that boots the exact `dsh web` composition and
 shows the same browser GUI in a native window. Non-technical users never touch a
 terminal: the app starts the harness, opens the window, and exposes the full web
 feature set — sessions, tools, the workspace/folder flow, model settings, and the
 API-key setup — with an OS-native directory chooser.
+
+![Running desktop interface](../../assets/desktop-main-window.png)
 
 ## How it works
 
@@ -38,14 +42,16 @@ pinned Electron major bundles a Node satisfying the harness engine range.
 
 ```sh
 pnpm install
-pnpm run build          # builds the workspace libs + the web frontend dist
-pnpm --filter @deepseek-ai/dsh-desktop dev   # build the shell and launch Electron
+pnpm run build
+pnpm --filter @deepseek-ai/dsh-desktop dev
 ```
 
 Headless smoke test (no Electron, no display):
 
 ```sh
 pnpm --filter @deepseek-ai/dsh-desktop smoke
+pnpm --filter @deepseek-ai/dsh-desktop test:policy
+pnpm --filter @deepseek-ai/dsh-desktop test:lifecycle
 ```
 
 It boots the desktop composition against a throwaway Harness home and asserts
@@ -55,9 +61,9 @@ the GUI contract: index carries `__DSH_BOOT__`, a client bundle serves from
 ## Packaging
 
 ```sh
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac     # dmg + zip (arm64, x64)
-pnpm --filter @deepseek-ai/dsh-desktop dist:win     # NSIS installer (x64)
-pnpm --filter @deepseek-ai/dsh-desktop dist:linux   # AppImage + deb
+pnpm --filter @deepseek-ai/dsh-desktop dist:mac
+pnpm --filter @deepseek-ai/dsh-desktop dist:win
+pnpm --filter @deepseek-ai/dsh-desktop dist:linux
 ```
 
 Artifacts land in `apps/desktop/release/`. Local builds are unsigned; release
@@ -81,6 +87,7 @@ overlay the CLI uses.
 | `src/preload.cts` | Sandboxed preload exposing the minimal `dshDesktop` surface |
 | `src/picker.ts` | The `directory-picker` seam's Electron backend + overlay |
 | `tests/smoke.ts` | Headless end-to-end boot check |
+| `icon.png` | Cross-platform application icon |
 | `electron-builder.yml` | Cross-platform packaging targets |
 
 ## Data and persistence
@@ -123,9 +130,9 @@ runtime. Choose the architecture at build time (see the
 [electron-builder docs](https://www.electron.build/docs/mac/)):
 
 ```sh
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64      # Apple Silicon dmg + zip
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:x64        # Intel dmg + zip
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:universal  # one fat binary for both
+pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64
+pnpm --filter @deepseek-ai/dsh-desktop dist:mac:x64
+pnpm --filter @deepseek-ai/dsh-desktop dist:mac:universal
 ```
 
 The universal build merges the two architectures with @electron/universal;
@@ -143,5 +150,5 @@ runs on the machine that built it.
   swapping the transport without touching the client packages.
 - `cordis.patch.yml` hot-reload (config HMR) is not wired in the desktop boot;
   edits take effect on the next app start.
-- No app icon or auto-update pipeline yet; both are electron-builder surface
-  work once a release channel exists.
+- No auto-update pipeline yet; it is electron-builder surface work once a
+  release channel exists.

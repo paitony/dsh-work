@@ -1,0 +1,78 @@
+# Build unsigned/signed platform packages from a version tag and attach them to
+# the GitHub Release. Signing is enabled automatically when the repository
+# secrets documented in docs/building.md are present.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: mac-arm64
+            os: macos-14
+            command: dist:mac:arm64
+          - target: mac-x64
+            os: macos-14
+            command: dist:mac:x64
+          - target: mac-universal
+            os: macos-14
+            command: dist:mac:universal
+          - target: windows-x64
+            os: windows-latest
+            command: dist:win
+          - target: linux-x64
+            os: ubuntu-latest
+            command: dist:linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+      - name: Package
+        run: pnpm --filter @deepseek-ai/dsh-desktop ${{ matrix.command }}
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: apps/desktop/release/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release
+          merge-multiple: true
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: release/**

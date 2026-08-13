@@ -4,25 +4,27 @@
 
 English: [README.en.md](README.en.md)
 
+![DeepSeek Harness Desktop running on macOS](assets/desktop-main-window.png)
+
 ## 特性
 
 - **完整功能**：渲染层就是 harness 官方 Web GUI —— 会话、工具调用、工作区/文件夹流程、模型与 API Key 设置，与 `dsh web` 逐字节一致；
 - **零运行时依赖**：Electron 内置 Node，所有依赖与前端 dist 全部打进安装包；
-- **原生体验**：系统原生目录选择器、原生菜单、单实例、退出时优雅关闭 harness；
+- **原生体验**：应用图标、系统原生目录选择器、原生菜单、单实例、退出时优雅关闭 harness；
 - **跨平台**：macOS（Intel / Apple Silicon / Universal）、Windows、Linux 打包目标齐全；
 - **权限引导**：启动时自动检测 macOS「完全磁盘访问」/ Seatbelt、Windows PowerShell 等能力缺口并引导设置；
 - **数据自持**：会话、设置、凭据持久化在 `~/.dsh`，每次打开都能看到此前的运行记录。
 
 ## 安装（最终用户）
 
-从 [Releases](https://github.com/paitony/dsh-work/releases) 下载对应平台的安装包：
+从 [GitHub Releases](https://github.com/paitony/dsh-work/releases) 下载对应平台的安装包：
 
 | 平台 | 安装包 | 说明 |
 |---|---|---|
-| macOS Apple Silicon | `DeepSeek-Harness-*-arm64.dmg` | M1/M2/M3/M4 |
-| macOS Intel | `DeepSeek-Harness-*-x64.dmg` | Intel Mac |
-| macOS 通用 | `DeepSeek-Harness-*-universal.dmg` | 两种架构都可运行（体积更大） |
-| Windows | `DeepSeek-Harness-*-win-x64.exe` | NSIS 安装器 |
+| macOS Apple Silicon | `DeepSeek Harness-*-mac-arm64.dmg` | M1/M2/M3/M4 |
+| macOS Intel | `DeepSeek Harness-*-mac-x64.dmg` | Intel Mac |
+| macOS 通用 | `DeepSeek Harness-*-mac-universal.dmg` | 两种架构都可运行（体积更大） |
+| Windows | `DeepSeek Harness-*-win-x64.exe` | NSIS 安装器 |
 | Linux | AppImage / deb | x64 |
 
 > 正式发布的安装包需要代码签名与公证（macOS Gatekeeper、Windows SmartScreen 会拦截未签名包）。
@@ -110,6 +112,8 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + de
 ## 架构
 
 Electron 主进程内引导 harness（复用 `dsh-app-boot` 的 profile 机制），渲染进程加载 harness 官方 Web 前端。详见 [docs/architecture.md](docs/architecture.md)（含 Mermaid 架构图与时序图）。
+
+构建矩阵、签名、公证和 GitHub Actions 发布流程见 [docs/building.md](docs/building.md)；Electron 生命周期、安全边界和验证证据见 [docs/quality.md](docs/quality.md)。
 
 ## 常见问题
 

@@ -7,9 +7,18 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-14, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
@@ -21,10 +30,20 @@ jobs:
           node-version: 24
           cache: pnpm
       - name: Install
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
       - name: Build
         run: pnpm run build
       - name: Desktop smoke test
         run: pnpm --filter @deepseek-ai/dsh-desktop smoke
+      - name: Package desktop
+        run: pnpm --filter @deepseek-ai/dsh-desktop dist
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+      - name: Upload desktop package
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ runner.os }}-${{ runner.arch }}
+          path: apps/desktop/release/*
+          if-no-files-found: error

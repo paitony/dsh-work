@@ -4,11 +4,13 @@ An open-source project that packages [DeepSeek Harness](https://github.com/deeps
 
 中文文档: [README.md](README.md)
 
+![DeepSeek Harness Desktop running on macOS](assets/desktop-main-window.png)
+
 ## Features
 
 - **Full feature parity**: the renderer is the official harness web GUI — sessions, tool calls, the workspace/folder flow, model and API-key settings, byte-identical to `dsh web`;
 - **Zero runtime dependencies**: Electron bundles Node; all dependencies and the frontend dist ship inside the installer;
-- **Native feel**: OS-native directory picker, native menus, single-instance, graceful harness shutdown on quit;
+- **Native feel**: application icon, OS-native directory picker, native menus, single-instance, graceful harness shutdown on quit;
 - **Cross-platform**: macOS (Intel / Apple Silicon / Universal), Windows, Linux packaging targets;
 - **Permission guidance**: startup capability checks (macOS Full Disk Access / Seatbelt, Windows PowerShell) with one-time reminders and links into System Settings;
 - **Own data**: sessions, settings and credentials persist under `~/.dsh`; reopening shows all previous runs.
@@ -31,6 +33,10 @@ pnpm install        # install all workspace dependencies (including Electron)
 pnpm run build      # build all harness libraries + the web frontend dist
 ```
 
+## Installation
+
+Download the matching installer from [GitHub Releases](https://github.com/paitony/dsh-work/releases): `DeepSeek Harness-*-mac-arm64.dmg` for Apple Silicon, `DeepSeek Harness-*-mac-x64.dmg` for Intel Macs, `DeepSeek Harness-*-mac-universal.dmg` for either Mac architecture, `DeepSeek Harness-*-win-x64.exe` for Windows, or the x64 AppImage/deb package for Linux. Official releases must be code-signed and notarized; unsigned local builds may be blocked by Gatekeeper or SmartScreen.
+
 ### Development
 
 ```sh
@@ -52,7 +58,7 @@ Artifacts land in `apps/desktop/release/`. Release distribution requires code si
 
 ## Architecture
 
-The Electron main process boots the harness in-process (reusing `dsh-app-boot` profile machinery) and the renderer loads the official harness web frontend. See [docs/architecture.md](docs/architecture.md) for Mermaid diagrams.
+The Electron main process boots the harness in-process (reusing `dsh-app-boot` profile machinery) and the renderer loads the official harness web frontend. See [docs/architecture.md](docs/architecture.md) for Mermaid diagrams, [docs/building.md](docs/building.md) for the build/signing/release workflow, and [docs/quality.md](docs/quality.md) for the Electron security and lifecycle verification record.
 
 ## Data & persistence
 

@@ -14,6 +14,7 @@ import { app, BrowserWindow, dialog, Menu, shell, type MenuItemConstructorOption
 import { bootDesktop, desktopOverlayPatches, type DesktopBoot } from './boot.ts'
 import { electronPickerOverlay } from './picker.ts'
 import { detectPermissionIssues, remindPermissionIssues } from './permissions.ts'
+import { isAllowedExternalUrl, isSameOrigin } from './window-policy.ts'
 
 /** The single app window; closed means the shell is showing no GUI. */
 let mainWindow: BrowserWindow | undefined
@@ -21,17 +22,43 @@ let mainWindow: BrowserWindow | undefined
 /** The booted harness; set once startup settles and cleared on teardown. */
 let harness: DesktopBoot | undefined
 
+/** Set before shutdown starts so an in-flight boot cannot create a new window. */
+let quitRequested = false
+
 /** Preload script path, emitted beside this module as CommonJS (sandboxed preloads cannot be ESM). */
 const PRELOAD = fileURLToPath(new URL('./preload.cjs', import.meta.url))
-/** Diagnostic log inside Electron's userData, so boot failures are readable without a terminal. */
-async function log(message: string): Promise<void> {
-  // Resolved lazily: app.getPath('userData') may be unavailable at module scope.
-  try {
-    const file = join(app.getPath('userData'), 'dsh-desktop.log')
-    await appendFile(file, `${new Date().toISOString()} ${message}\n`)
-  } catch (error) {
-    console.error('[dsh-desktop]', message, error instanceof Error ? error.message : '')
+
+/** A single append chain prevents a burst of renderer errors from retaining open writes. */
+let diagnosticLog = Promise.resolve()
+
+/**
+ * Append a bounded diagnostic line inside Electron's userData, so boot
+ * failures remain readable without a terminal and writes stay ordered.
+ * @param message - the diagnostic message.
+ * @returns a promise that settles after this line has been attempted.
+ */
+function log(message: string): Promise<void> {
+  const bounded = message.length > 8000 ? `${message.slice(0, 8000)}…` : message
+  diagnosticLog = diagnosticLog.then(async () => {
+    try {
+      const file = join(app.getPath('userData'), 'dsh-desktop.log')
+      await appendFile(file, `${new Date().toISOString()} ${bounded}\n`)
+    } catch (error) {
+      console.error('[dsh-desktop]', bounded, error instanceof Error ? error.message : '')
+    }
+  })
+  return diagnosticLog
+}
+
+/** Open a browser/mail URL only after applying the renderer boundary policy. */
+function openExternalUrl(target: string): void {
+  if (!isAllowedExternalUrl(target)) {
+    void log(`blocked external URL: ${target.slice(0, 500)}`)
+    return
   }
+  void shell.openExternal(target).catch((error) => {
+    void log(`openExternal failed: ${error instanceof Error ? error.message : String(error)}`)
+  })
 }
 
 
@@ -41,6 +68,7 @@ async function log(message: string): Promise<void> {
  * @returns the created window.
  */
 function createWindow(url: string): BrowserWindow {
+  const origin = new URL(url).origin
   const win = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -57,14 +85,26 @@ function createWindow(url: string): BrowserWindow {
   })
   // Outbound links open in the user's browser, never inside the app.
   win.webContents.setWindowOpenHandler(({ url: target }) => {
-    void shell.openExternal(target)
+    openExternalUrl(target)
     return { action: 'deny' }
   })
+  // Keep the renderer on the booted loopback origin. A plugin or injected page
+  // must not be able to turn the BrowserWindow into a general-purpose browser.
+  const handleNavigation = (event: Electron.Event, target: string): void => {
+    if (isSameOrigin(target, origin)) return
+    event.preventDefault()
+    openExternalUrl(target)
+  }
+  win.webContents.on('will-navigate', handleNavigation)
+  win.webContents.on('will-redirect', handleNavigation)
+  // The desktop UI has no webview surface; prevent a plugin from creating a
+  // second renderer with a weaker navigation policy.
+  win.webContents.on('will-attach-webview', (event) => { event.preventDefault() })
   win.webContents.on('did-fail-load', (_event, code, description) => {
     void log(`did-fail-load ${code} ${description}`)
   })
-  win.webContents.on('console-message', (_event, _level, message, line, sourceId) => {
-    void log(`renderer console: ${message} (${sourceId}:${line})`)
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = undefined
   })
   void win.loadURL(url)
   return win
@@ -83,7 +123,7 @@ function buildMenu(url: string): void {
       submenu: [
         {
           label: 'Open in Browser',
-          click: () => { void shell.openExternal(url) },
+          click: () => { openExternalUrl(url) },
         },
         { type: 'separator' },
         isMac ? { role: 'close' as const } : { role: 'quit' as const },
@@ -123,6 +163,7 @@ async function start(): Promise<void> {
     app.quit()
     return
   }
+  if (quitRequested) return
   await log(`boot ok: ${harness.url}`)
   buildMenu(harness.url)
   mainWindow = createWindow(harness.url)
@@ -134,7 +175,7 @@ async function start(): Promise<void> {
       await log(`permissions: ${issues.length === 0 ? 'ok' : issues.map(i => i.id).join(',')}`)
       // Screenshot verification mode must not block on a modal reminder.
       const screenshot = process.env.DSH_DESKTOP_SCREENSHOT
-      if (issues.length > 0 && (screenshot === undefined || screenshot === '')) {
+      if (!quitRequested && issues.length > 0 && (screenshot === undefined || screenshot === '')) {
         await remindPermissionIssues(issues, join(app.getPath('userData'), 'permission-dismissals.json'))
       }
     } catch (error) {
@@ -143,14 +184,16 @@ async function start(): Promise<void> {
   })()
   const screenshot = process.env.DSH_DESKTOP_SCREENSHOT
   if (screenshot !== undefined && screenshot !== '') {
-    mainWindow.webContents.once('did-finish-load', () => {
+    const screenshotWindow = mainWindow
+    screenshotWindow?.webContents.once('did-finish-load', () => {
       void (async () => {
-        // Let the shell kernel settle and the UI paint before capturing.
-        await new Promise(resolve => setTimeout(resolve, 15000))
-        const image = await mainWindow?.webContents.capturePage()
-        if (image !== undefined) await writeFile(screenshot, image.toPNG())
         try {
-          const dom = await mainWindow?.webContents.executeJavaScript(`({
+          // Let the shell kernel settle and the UI paint before capturing.
+          await new Promise(resolve => setTimeout(resolve, 15000))
+          if (screenshotWindow.isDestroyed()) return
+          const image = await screenshotWindow.webContents.capturePage()
+          await writeFile(screenshot, image.toPNG())
+          const dom = await screenshotWindow.webContents.executeJavaScript(`({
             title: document.title,
             rootChildren: document.getElementById('root')?.childElementCount ?? -1,
             textLength: (document.body?.innerText ?? '').length,
@@ -164,8 +207,9 @@ async function start(): Promise<void> {
           await log(`dom: ${JSON.stringify(dom)}`)
         } catch (error) {
           await log(`dom capture failed: ${error instanceof Error ? error.message : String(error)}`)
+        } finally {
+          app.quit()
         }
-        app.quit()
       })()
     })
   }
@@ -182,21 +226,44 @@ if (!app.requestSingleInstanceLock()) {
     }
   })
 
-  app.whenReady().then(() => { void start() })
+  /** Startup is tracked so a quit during plugin activation waits for cleanup. */
+  let startup: Promise<void> | undefined
+  let tearingDown = false
+
+  app.whenReady().then(() => {
+    startup = start()
+    void startup.catch(async (error) => {
+      const message = error instanceof Error ? error.message : String(error)
+      await log(`startup failed: ${error instanceof Error ? error.stack ?? message : message}`)
+      if (!quitRequested) {
+        dialog.showErrorBox('DeepSeek Harness failed to start', message)
+        app.quit()
+      }
+    })
+  })
 
   process.on('uncaughtException', (error) => { void log(`uncaughtException: ${error.stack ?? error.message}`) })
   process.on('unhandledRejection', (reason) => { void log(`unhandledRejection: ${String(reason)}`) })
 
-  // Teardown: dispose the harness tree before the app exits, so sessions and
-  // background jobs quiesce cleanly. One quit pass only — the disposal
-  // promise drives app.exit once it settles.
-  let tearingDown = false
+  // Teardown: wait for startup to settle, then dispose the harness tree before
+  // the app exits. This also covers a user closing the window during boot.
   app.on('before-quit', (event) => {
     if (tearingDown) return
     tearingDown = true
+    quitRequested = true
     event.preventDefault()
     void (async () => {
-      try { await harness?.dispose() } finally { app.exit(0) }
+      try {
+        try { await startup } catch (error) {
+          await log(`startup cleanup observed: ${error instanceof Error ? error.message : String(error)}`)
+        }
+        await harness?.dispose()
+        harness = undefined
+      } catch (error) {
+        await log(`harness dispose failed: ${error instanceof Error ? error.message : String(error)}`)
+      } finally {
+        app.exit(0)
+      }
     })()
   })
 
