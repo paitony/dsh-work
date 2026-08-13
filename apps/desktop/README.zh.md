@@ -1,9 +1,13 @@
 # DeepSeek Harness Desktop
 
-DeepSeek Harness 的 Electron 桌面壳：一个可在 Windows、macOS、Linux 安装运行的应用，
+English: [README.md](README.md)
+
+[DeepSeek Harness](../../README.md) 的 Electron 桌面壳：一个可在 Windows、macOS、Linux 安装运行的应用，
 在进程内引导与 `dsh web` 完全相同的组合，在原生窗口中展示同一个浏览器 GUI。
 不懂技术的普通用户无需接触终端：应用自动启动 harness、打开窗口，提供完整的 Web 功能集
 ——会话、工具、工作区/文件夹流程、模型设置、API Key 配置——并配有系统原生目录选择器。
+
+![运行中的桌面界面](../../assets/desktop-main-window.png)
 
 ## 工作原理
 
@@ -29,14 +33,16 @@ DeepSeek Harness 的 Electron 桌面壳：一个可在 Windows、macOS、Linux �
 
 ```sh
 pnpm install
-pnpm run build          # 构建工作区 lib 与 web 前端 dist
-pnpm --filter @deepseek-ai/dsh-desktop dev   # 编译壳并启动 Electron
+pnpm run build
+pnpm --filter @deepseek-ai/dsh-desktop dev
 ```
 
 无头冒烟测试（不需要 Electron，不需要显示器）：
 
 ```sh
 pnpm --filter @deepseek-ai/dsh-desktop smoke
+pnpm --filter @deepseek-ai/dsh-desktop test:policy
+pnpm --filter @deepseek-ai/dsh-desktop test:lifecycle
 ```
 
 它在临时 Harness home 上引导桌面组合并断言 GUI 契约：index 携带 `__DSH_BOOT__`、
@@ -45,9 +51,9 @@ pnpm --filter @deepseek-ai/dsh-desktop smoke
 ## 打包
 
 ```sh
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac     # dmg + zip（arm64、x64）
-pnpm --filter @deepseek-ai/dsh-desktop dist:win     # NSIS 安装器（x64）
-pnpm --filter @deepseek-ai/dsh-desktop dist:linux   # AppImage + deb
+pnpm --filter @deepseek-ai/dsh-desktop dist:mac
+pnpm --filter @deepseek-ai/dsh-desktop dist:win
+pnpm --filter @deepseek-ai/dsh-desktop dist:linux
 ```
 
 产物输出到 `apps/desktop/release/`。本地构建未签名；发布分发需要 macOS Developer ID /
@@ -68,6 +74,7 @@ harness 通过符号链接维护 profile fallback（`~/.dsh/profiles/node_module
 | `src/preload.cts` | 沙箱 preload，暴露最小 `dshDesktop` 表面 |
 | `src/picker.ts` | `directory-picker` 缝的 Electron 后端 + overlay |
 | `tests/smoke.ts` | 无头端到端引导检查 |
+| `icon.png` | 跨平台应用图标 |
 | `electron-builder.yml` | 跨平台打包目标 |
 
 ## 数据与持久化
@@ -102,9 +109,9 @@ Electron 自带 Node，用户无需安装 Node 或任何运行时。构建时选
 （参见 [electron-builder 文档](https://www.electron.build/docs/mac/)）：
 
 ```sh
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64      # Apple Silicon dmg + zip
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:x64        # Intel dmg + zip
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:universal  # 单个通用包，双架构
+pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64
+pnpm --filter @deepseek-ai/dsh-desktop dist:mac:x64
+pnpm --filter @deepseek-ai/dsh-desktop dist:mac:universal
 ```
 
 Universal 包由 @electron/universal 合并两个架构；原生模块（`node-pty`、`koffi`、
@@ -118,4 +125,4 @@ Gatekeeper 会拦截下载，临时签名/未签名构建只能在构建它的�
   未来 Electron 形态——`file://` 渲染进程 + IPC 桥承载 fetch——可以在不改动客户端包的
   前提下通过替换传输层接入。
 - 桌面引导未接入 `cordis.patch.yml` 热重载（配置 HMR）；修改后下次启动生效。
-- 暂无应用图标与自动更新管道；发布渠道确定后均为 electron-builder 的表面工作。
+- 暂无自动更新管道；发布渠道确定后可通过 electron-builder 接入。

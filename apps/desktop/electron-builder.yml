@@ -3,6 +3,7 @@
 # Local/CI builds are unsigned; add mac.identity / CSC_* env for release signing.
 appId: ai.deepseek.harness
 productName: DeepSeek Harness
+icon: icon.png
 directories:
   output: release
 files:
