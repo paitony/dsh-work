@@ -9,6 +9,8 @@ English: [README.md](README.md)
 
 ![运行中的桌面界面](../../assets/desktop-main-window.png)
 
+更多真实运行状态见[软件界面截图](../../docs/screenshots.md)。
+
 ## 工作原理
 
 - Electron 主进程使用与 `dsh` CLI 相同的 profile 机制（`dsh-app-boot`）**在进程内**引导

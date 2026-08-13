@@ -79,7 +79,7 @@ async function probePowerShell(): Promise<string | undefined> {
       await new Promise<void>((resolve, reject) => {
         execFile(name, ['-NoProfile', '-Command', '$true'], { timeout: 8000 }, (error) => {
           if (error === null) resolve()
-          else reject(error)
+          else reject(new Error(`${name} probe failed`, { cause: error }))
         })
       })
       return name
@@ -151,7 +151,7 @@ export async function remindPermissionIssues(
       message: issue.title,
       detail: issue.detail,
       buttons: issue.settingsUrl === undefined ? ['知道了'] : ['打开系统设置', '知道了'],
-      defaultId: issue.settingsUrl === undefined ? 0 : 0,
+      defaultId: 0,
       cancelId: issue.settingsUrl === undefined ? 0 : 1,
       noLink: true,
     })

@@ -9,11 +9,12 @@
 
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { env } from 'node:process'
 import { join } from 'node:path'
 import { bootDesktop, desktopOverlayPatches } from '../src/boot.ts'
 
 // The composition is what ships; boot it headlessly against a throwaway home.
-process.env.DSH_TELEMETRY_DISABLED = '1'
+env.DSH_TELEMETRY_DISABLED = '1'
 
 const home = await mkdtemp(join(tmpdir(), 'dsh-desktop-smoke-'))
 let failed = false

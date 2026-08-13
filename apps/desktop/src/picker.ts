@@ -24,7 +24,8 @@ export const name = 'desktop-picker'
 /** The directory-picker row the web-app bundle mounts (directory-picker-auto); the overlay disables it. */
 const AUTO_PICKER_ROW_ID = 'directory-picker'
 
-/** The client surface row the auto chooser also mounts; the Electron backend mounts it so the workspace flow keeps its picking affordance. */
+/** The client surface row the auto chooser also mounts; Electron mounts it so
+ * the workspace flow keeps its picking affordance. */
 const NATIVE_SURFACE_PACKAGE = '@deepseek-ai/dsh-client-ui-directory-picker-native'
 
 /**

@@ -1,6 +1,6 @@
 /** Regression checks for the Electron renderer navigation boundary. */
 
-import assert from 'node:assert/strict'
+import { strict as assert } from 'node:assert'
 import { isAllowedExternalUrl, isSameOrigin } from '../src/window-policy.ts'
 
 assert.equal(isAllowedExternalUrl('https://github.com/deepseek-ai/deepseek-harness'), true)

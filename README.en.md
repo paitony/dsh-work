@@ -6,6 +6,8 @@ An open-source project that packages [DeepSeek Harness](https://github.com/deeps
 
 ![DeepSeek Harness Desktop running on macOS](assets/desktop-main-window.png)
 
+See the [runtime screenshot gallery](docs/screenshots.md) for additional real application states.
+
 ## Features
 
 - **Full feature parity**: the renderer is the official harness web GUI — sessions, tool calls, the workspace/folder flow, model and API-key settings, byte-identical to `dsh web`;

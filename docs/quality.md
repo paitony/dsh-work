@@ -31,6 +31,8 @@ pnpm run verify-mermaid
 
 其中 `smoke` 不需要 API Key 或显示器；它只验证本地组合和 GUI 传输契约，不向 DeepSeek API 发送请求。真实模型请求、权限弹窗、原生目录选择器和安装后启动必须在目标系统上另行验收。
 
+实际运行界面截图见[软件运行截图](screenshots.md)。
+
 ## 发布前清单
 
 - 在 macOS 构建 arm64、x64 或 Universal 包，并在相应硬件上启动一次；在 Windows 和 Linux runner 上分别构建并启动对应安装包。

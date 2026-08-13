@@ -11,6 +11,8 @@ API-key setup — with an OS-native directory chooser.
 
 ![Running desktop interface](../../assets/desktop-main-window.png)
 
+Additional real application states: [runtime screenshot gallery](../../docs/screenshots.md).
+
 ## How it works
 
 - The Electron main process boots the harness **in-process** with the same

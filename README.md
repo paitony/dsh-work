@@ -6,6 +6,8 @@ English: [README.en.md](README.en.md)
 
 ![DeepSeek Harness Desktop running on macOS](assets/desktop-main-window.png)
 
+更多真实运行状态见[软件界面截图](docs/screenshots.md)。
+
 ## 特性
 
 - **完整功能**：渲染层就是 harness 官方 Web GUI —— 会话、工具调用、工作区/文件夹流程、模型与 API Key 设置，与 `dsh web` 逐字节一致；

@@ -273,17 +273,17 @@ export async function bootDesktop(options: BootDesktopOptions = {}): Promise<Des
   let ctx: Context
   try {
     ctx = await boot(BIN_NAME, rootConfig, patches, (hostCtx) => {
-    app.current = hostCtx
-    // Before any config-tree entry mounts, so plugins resolve all launch-time
-    // environment values from the same immutable provenance snapshot.
-    hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, loadLayeredEnv(BIN_NAME))
-    // The desktop shell owns process lifetime; the exit request is wired to
-    // tree disposal only (the caller decides whether to quit the app).
-    provideCmdline(hostCtx, {
-      args: [],
-      exit: () => { void app.current?.fiber.dispose() },
+      app.current = hostCtx
+      // Before any config-tree entry mounts, so plugins resolve all launch-time
+      // environment values from the same immutable provenance snapshot.
+      hostCtx.provide(DSH_LAUNCH_ENVIRONMENT_KEY, loadLayeredEnv(BIN_NAME))
+      // The desktop shell owns process lifetime; the exit request is wired to
+      // tree disposal only (the caller decides whether to quit the app).
+      provideCmdline(hostCtx, {
+        args: [],
+        exit: () => { void app.current?.fiber.dispose() },
+      })
     })
-  })
   } catch (error) {
     throw new Error(`desktop boot failed — failing loader entries:\n${describeBootError(error)}`, { cause: error })
   }

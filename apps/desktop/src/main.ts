@@ -9,6 +9,7 @@
 
 import { appendFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, dialog, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 import { bootDesktop, desktopOverlayPatches, type DesktopBoot } from './boot.ts'
@@ -23,7 +24,7 @@ let mainWindow: BrowserWindow | undefined
 let harness: DesktopBoot | undefined
 
 /** Set before shutdown starts so an in-flight boot cannot create a new window. */
-let quitRequested = false
+const lifecycle = { quitRequested: false }
 
 /** Preload script path, emitted beside this module as CommonJS (sandboxed preloads cannot be ESM). */
 const PRELOAD = fileURLToPath(new URL('./preload.cjs', import.meta.url))
@@ -56,11 +57,10 @@ function openExternalUrl(target: string): void {
     void log(`blocked external URL: ${target.slice(0, 500)}`)
     return
   }
-  void shell.openExternal(target).catch((error) => {
+  void shell.openExternal(target).catch((error: unknown) => {
     void log(`openExternal failed: ${error instanceof Error ? error.message : String(error)}`)
   })
 }
-
 
 /**
  * Create the main window over the harness GUI URL.
@@ -163,7 +163,7 @@ async function start(): Promise<void> {
     app.quit()
     return
   }
-  if (quitRequested) return
+  if (lifecycle.quitRequested) return
   await log(`boot ok: ${harness.url}`)
   buildMenu(harness.url)
   mainWindow = createWindow(harness.url)
@@ -174,18 +174,19 @@ async function start(): Promise<void> {
       const issues = await detectPermissionIssues()
       await log(`permissions: ${issues.length === 0 ? 'ok' : issues.map(i => i.id).join(',')}`)
       // Screenshot verification mode must not block on a modal reminder.
-      const screenshot = process.env.DSH_DESKTOP_SCREENSHOT
-      if (!quitRequested && issues.length > 0 && (screenshot === undefined || screenshot === '')) {
+      const screenshotMode = (env.DSH_DESKTOP_SCREENSHOT ?? '') !== ''
+      if (lifecycle.quitRequested) return
+      if (issues.length > 0 && !screenshotMode) {
         await remindPermissionIssues(issues, join(app.getPath('userData'), 'permission-dismissals.json'))
       }
     } catch (error) {
       await log(`permission check failed: ${error instanceof Error ? error.message : String(error)}`)
     }
   })()
-  const screenshot = process.env.DSH_DESKTOP_SCREENSHOT
-  if (screenshot !== undefined && screenshot !== '') {
+  const screenshot = env.DSH_DESKTOP_SCREENSHOT ?? ''
+  if (screenshot !== '') {
     const screenshotWindow = mainWindow
-    screenshotWindow?.webContents.once('did-finish-load', () => {
+    screenshotWindow.webContents.once('did-finish-load', () => {
       void (async () => {
         try {
           // Let the shell kernel settle and the UI paint before capturing.
@@ -193,7 +194,7 @@ async function start(): Promise<void> {
           if (screenshotWindow.isDestroyed()) return
           const image = await screenshotWindow.webContents.capturePage()
           await writeFile(screenshot, image.toPNG())
-          const dom = await screenshotWindow.webContents.executeJavaScript(`({
+          const dom = await (screenshotWindow.webContents.executeJavaScript(`({
             title: document.title,
             rootChildren: document.getElementById('root')?.childElementCount ?? -1,
             textLength: (document.body?.innerText ?? '').length,
@@ -203,7 +204,7 @@ async function start(): Promise<void> {
               return b && Array.isArray(b.entries) ? b.entries.map(e => e.id).join('|') : 'NO_BOOT'
             })(),
             hasBoot: typeof window.__DSH_BOOT__ !== 'undefined',
-          })`)
+          })`) as Promise<unknown>)
           await log(`dom: ${JSON.stringify(dom)}`)
         } catch (error) {
           await log(`dom capture failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -230,12 +231,12 @@ if (!app.requestSingleInstanceLock()) {
   let startup: Promise<void> | undefined
   let tearingDown = false
 
-  app.whenReady().then(() => {
+  void app.whenReady().then(() => {
     startup = start()
-    void startup.catch(async (error) => {
+    void startup.catch(async (error: unknown) => {
       const message = error instanceof Error ? error.message : String(error)
       await log(`startup failed: ${error instanceof Error ? error.stack ?? message : message}`)
-      if (!quitRequested) {
+      if (!lifecycle.quitRequested) {
         dialog.showErrorBox('DeepSeek Harness failed to start', message)
         app.quit()
       }
@@ -250,7 +251,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('before-quit', (event) => {
     if (tearingDown) return
     tearingDown = true
-    quitRequested = true
+    lifecycle.quitRequested = true
     event.preventDefault()
     void (async () => {
       try {
