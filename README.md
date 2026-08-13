@@ -15,7 +15,7 @@ English: [README.en.md](README.en.md)
 
 ## 安装（最终用户）
 
-从 Releases 下载对应平台的安装包：
+从 [Releases](https://github.com/paitony/dsh-work/releases) 下载对应平台的安装包：
 
 | 平台 | 安装包 | 说明 |
 |---|---|---|
