@@ -44,7 +44,6 @@ nsis:
   allowToChangeInstallationDirectory: true
 linux:
   category: Development
-  desktopName: deepseek-harness
   syncDesktopName: true
   target:
     - AppImage
