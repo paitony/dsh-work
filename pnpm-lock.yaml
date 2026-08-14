@@ -600,9 +600,6 @@ importers:
       '@deepseek-ai/dsh-credentials-local':
         specifier: workspace:^
         version: link:../../packages/credentials/credentials-local
-      '@deepseek-ai/dsh-desktop':
-        specifier: workspace:^
-        version: 'link:'
       '@deepseek-ai/dsh-fs':
         specifier: workspace:^
         version: link:../../packages/fs/fs

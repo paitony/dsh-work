@@ -108,7 +108,6 @@
     "@deepseek-ai/dsh-cordis-host-runner": "workspace:^",
     "@deepseek-ai/dsh-credentials": "workspace:^",
     "@deepseek-ai/dsh-credentials-local": "workspace:^",
-    "@deepseek-ai/dsh-desktop": "workspace:^",
     "@deepseek-ai/dsh-fs": "workspace:^",
     "@deepseek-ai/dsh-fs-local": "workspace:^",
     "@deepseek-ai/dsh-fs-observation-policy": "workspace:^",
