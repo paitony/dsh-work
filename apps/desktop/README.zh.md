@@ -11,6 +11,10 @@ English: [README.md](README.md)
 
 更多真实运行状态见[软件界面截图](../../docs/screenshots.md)。
 
+系统架构图和代码运行时序图见
+[`docs/architecture.md`](../../docs/architecture.md)，[仓库根 README](../../README.md) 也提供了简版说明
+和 Mermaid 图。
+
 ## 工作原理
 
 - Electron 主进程使用与 `dsh` CLI 相同的 profile 机制（`dsh-app-boot`）**在进程内**引导
@@ -23,8 +27,8 @@ English: [README.md](README.md)
   vendored Cordis loader 依赖 Node 内部模块 loader（经 `node-addon-require-builtin`，
   Electron 中不可用）做 profile 锚定的插件解析。打包版通过打包后的 `node_modules`
   解析，因此该 flag 仅在从工作区运行时需要。
-- `directory-picker` 能力缝由 Electron 后端（`dialog.showOpenDialog`）提供服务，
-  替代派生的 osascript/zenity 子进程；无头引导仍回退到官方原生后端。
+- `directory-picker` 能力缝复用 Harness 的平台原生 provider，桌面壳不再维护第二套
+  picker 实现；无头引导使用相同的能力组合。
 - 会话、设置、凭据（API Key）与工作区存放在 CLI 使用的同一个 Harness home（`~/.dsh`），
   CLI 与桌面应用共享状态。
 
@@ -74,7 +78,8 @@ harness 通过符号链接维护 profile fallback（`~/.dsh/profiles/node_module
 | `src/boot.ts` | 不依赖 Electron 的 harness 引导：profile 组合、桌面 overlay、销毁 |
 | `src/main.ts` | Electron 主进程：窗口、菜单、生命周期、截图验证模式 |
 | `src/preload.cts` | 沙箱 preload，暴露最小 `dshDesktop` 表面 |
-| `src/picker.ts` | `directory-picker` 缝的 Electron 后端 + overlay |
+| `src/permissions.ts` | 系统能力检查与一次性权限提醒 |
+| `src/window-policy.ts` | loopback 导航和外部 URL 安全策略 |
 | `tests/smoke.ts` | 无头端到端引导检查 |
 | `icon.png` | 跨平台应用图标 |
 | `electron-builder.yml` | 跨平台打包目标 |
@@ -102,7 +107,7 @@ harness 的用户数据统一存放在 Harness home（`~/.dsh`），与 `dsh` CL
   PowerShell 5.1；检测探测 PATH，两者皆无时提醒。Windows 沙箱（受限令牌 + ACL）
   不需要管理员权限。
 
-除此之外无需其他权限：目录选择使用 Electron 对话框，打开路径使用系统默认应用，
+除此之外无需其他权限：目录选择使用 Harness 原生 provider，打开路径使用系统默认应用，
 出站 API 调用无需授权，服务器仅绑定 loopback。
 
 ## 双架构打包

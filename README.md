@@ -113,9 +113,80 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + de
 
 ## 架构
 
-Electron 主进程内引导 harness（复用 `dsh-app-boot` 的 profile 机制），渲染进程加载 harness 官方 Web 前端。详见 [docs/architecture.md](docs/architecture.md)（含 Mermaid 架构图与时序图）。
+桌面端只负责 Electron 壳、生命周期、安全策略和启动参数；Harness 本身仍在 Electron 主进程内按 `dsh-app-boot` 的 profile 机制运行。渲染进程加载 Harness 官方 Web 前端，通过本机 loopback Web 服务访问同一棵 Cordis 插件树。
 
-构建矩阵、签名、公证和 GitHub Actions 发布流程见 [docs/building.md](docs/building.md)；Electron 生命周期、安全边界和验证证据见 [docs/quality.md](docs/quality.md)。
+### 整体架构图
+
+```mermaid
+flowchart LR
+    USER[用户] --> MAIN["Electron 主进程<br/>apps/desktop/src/main.ts"]
+    MAIN --> BOOT["桌面启动层<br/>apps/desktop/src/boot.ts"]
+    MAIN --> POLICY["窗口安全 / 单实例 / 权限检测"]
+    BOOT --> APPBOOT["dsh-app-boot<br/>profile 装载与生命周期"]
+    APPBOOT --> TREE["Cordis 插件树<br/>dsh-base + dsh-web-app + 用户层"]
+    TREE --> SERVER["Loopback Web 服务<br/>127.0.0.1:随机端口"]
+    SERVER --> RENDERER["BrowserWindow 渲染进程<br/>Harness 官方 Web GUI"]
+    RENDERER --> STATIC["/plugins<br/>客户端插件 bundle"]
+    STATIC --> SERVER
+    RENDERER --> RPC["/api RPC + WebSocket 事件"]
+    RPC --> TREE
+    TREE --> DATA["~/.dsh<br/>会话 / 设置 / 凭据 / 工作区"]
+    TREE --> CAP["Harness capability<br/>文件系统 / 终端 / 目录选择器 / 模型"]
+
+    classDef shell fill:#eaf2ff,stroke:#4776b8,color:#172b4d
+    classDef runtime fill:#eef9f0,stroke:#4b9960,color:#173d20
+    classDef data fill:#fff5e6,stroke:#c98b2e,color:#4a2e00
+    class MAIN,BOOT,POLICY,RENDERER shell
+    class APPBOOT,TREE,SERVER,RPC,STATIC,CAP runtime
+    class DATA data
+```
+
+### 代码运行逻辑图
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant M as main.ts
+    participant B as boot.ts
+    participant T as Cordis 插件树
+    participant W as loopback webserver
+    participant R as BrowserWindow
+
+    U->>M: 启动应用
+    M->>M: app.whenReady() + 单实例锁
+    M->>B: bootDesktop({ overlays })
+    B->>B: 修复打包 profile 链接
+    B->>B: loadProfile("web")
+    B->>T: boot(profile bundles + 用户层 + 桌面 overlays)
+    T->>W: 绑定 127.0.0.1:0
+    W-->>B: 返回系统分配的端口
+    B-->>M: 返回 GUI loopback URL
+    M->>R: BrowserWindow.loadURL(url)
+    R->>W: GET / 与 /plugins
+    W-->>R: HTML、window.__DSH_BOOT__、客户端 bundles
+    R->>W: /api RPC + WebSocket
+    W->>T: 调用 agent、tool、session、fs、shell 等能力
+    T-->>W: 返回结果与事件
+    W-->>R: RPC 响应 / 实时事件
+    R-->>U: 渲染会话、工具、工作区和设置界面
+    U->>M: 退出应用
+    M->>T: before-quit 中等待并 dispose()
+    T->>W: 关闭插件树与 Web 服务
+    W-->>M: 清理完成
+    M-->>U: 退出进程
+```
+
+### 关键代码位置
+
+| 阶段 | 入口 | 作用 |
+|---|---|---|
+| Electron 壳 | `apps/desktop/src/main.ts` | 窗口、菜单、单实例、导航安全、权限提醒、优雅退出 |
+| Harness 引导 | `apps/desktop/src/boot.ts` | 装载 `web` profile、组合 bundle 和用户 patch、绑定 loopback 端口 |
+| 渲染入口 | `apps/desktop/src/preload.cts` + `BrowserWindow.loadURL()` | 在沙箱渲染进程中加载官方 Harness Web GUI |
+| 能力实现 | `packages/host/*`、`packages/fs/*`、`packages/shell/*`、`packages/llm/*` | 提供文件、终端、模型、会话等插件能力 |
+| 桌面打包 | `apps/desktop/electron-builder.yml` | asar、原生模块解包、平台安装包和图标配置 |
+
+更完整的分层、目录结构和构建细节见 [docs/architecture.md](docs/architecture.md)；构建矩阵、签名、公证和 GitHub Actions 发布流程见 [docs/building.md](docs/building.md)；Electron 生命周期、安全边界和验证证据见 [docs/quality.md](docs/quality.md)。
 
 ## 常见问题
 

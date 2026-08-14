@@ -13,6 +13,10 @@ API-key setup — with an OS-native directory chooser.
 
 Additional real application states: [runtime screenshot gallery](../../docs/screenshots.md).
 
+The system architecture and runtime sequence diagrams are documented in
+[`docs/architecture.md`](../../docs/architecture.md) and summarized in the
+repository [README](../../README.md).
+
 ## How it works
 
 - The Electron main process boots the harness **in-process** with the same
@@ -30,9 +34,9 @@ Additional real application states: [runtime screenshot gallery](../../docs/scre
   profile-anchored plugin resolution. Packaged builds resolve through the
   packed `node_modules` instead, so the flag is only needed when running from
   the workspace.
-- The `directory-picker` capability seam is served by an Electron backend
-  (`dialog.showOpenDialog`) instead of a spawned osascript/zenity child, while
-  the stock native backend remains the fallback for headless boots.
+- The `directory-picker` capability seam uses the Harness platform-native
+  provider, so the desktop shell does not maintain a second picker
+  implementation; headless boots use the same capability composition.
 - Sessions, settings, credentials (the API key), and the workspace live in the
   same Harness home (`~/.dsh`) the CLI uses, so the CLI and the desktop app
   share state.
@@ -87,7 +91,8 @@ overlay the CLI uses.
 | `src/boot.ts` | Electron-free harness boot: profile composition, desktop overlays, teardown |
 | `src/main.ts` | Electron main: window, menu, lifecycle, screenshot verification mode |
 | `src/preload.cts` | Sandboxed preload exposing the minimal `dshDesktop` surface |
-| `src/picker.ts` | The `directory-picker` seam's Electron backend + overlay |
+| `src/permissions.ts` | Advisory OS capability checks and one-time permission reminders |
+| `src/window-policy.ts` | Loopback navigation and allowed external URL policy |
 | `tests/smoke.ts` | Headless end-to-end boot check |
 | `icon.png` | Cross-platform application icon |
 | `electron-builder.yml` | Cross-platform packaging targets |
@@ -121,9 +126,9 @@ the relevant System Settings pane:
   Windows PowerShell 5.1; the check probes PATH and warns when neither exists.
   The Windows sandbox (restricted token + ACL) needs no elevation.
 
-No other permission is required: the directory picker uses Electron's dialog,
-path opening uses the OS default app, outbound API calls need no grant, and the
-server binds loopback only.
+No other permission is required: the directory picker uses the Harness native
+provider, path opening uses the OS default app, outbound API calls need no
+grant, and the server binds loopback only.
 
 ## Packaging for both Mac architectures
 

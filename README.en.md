@@ -60,7 +60,80 @@ Artifacts land in `apps/desktop/release/`. Release distribution requires code si
 
 ## Architecture
 
-The Electron main process boots the harness in-process (reusing `dsh-app-boot` profile machinery) and the renderer loads the official harness web frontend. See [docs/architecture.md](docs/architecture.md) for Mermaid diagrams, [docs/building.md](docs/building.md) for the build/signing/release workflow, and [docs/quality.md](docs/quality.md) for the Electron security and lifecycle verification record.
+The desktop shell owns Electron lifecycle, window security, permissions, and launch parameters. The harness itself boots in-process through `dsh-app-boot` profile machinery, while the renderer loads the official harness Web GUI over a loopback Web server.
+
+### System architecture
+
+```mermaid
+flowchart LR
+    USER[User] --> MAIN["Electron main process<br/>apps/desktop/src/main.ts"]
+    MAIN --> BOOT["Desktop boot layer<br/>apps/desktop/src/boot.ts"]
+    MAIN --> POLICY["Window security / single instance / permissions"]
+    BOOT --> APPBOOT["dsh-app-boot<br/>profile loading and lifecycle"]
+    APPBOOT --> TREE["Cordis plugin tree<br/>dsh-base + dsh-web-app + user layer"]
+    TREE --> SERVER["Loopback Web server<br/>127.0.0.1:OS-assigned port"]
+    SERVER --> RENDERER["BrowserWindow renderer<br/>official Harness Web GUI"]
+    RENDERER --> STATIC["/plugins<br/>client plugin bundles"]
+    STATIC --> SERVER
+    RENDERER --> RPC["/api RPC + WebSocket events"]
+    RPC --> TREE
+    TREE --> DATA["~/.dsh<br/>sessions / settings / credentials / workspaces"]
+    TREE --> CAP["Harness capabilities<br/>filesystem / shell / directory picker / models"]
+
+    classDef shell fill:#eaf2ff,stroke:#4776b8,color:#172b4d
+    classDef runtime fill:#eef9f0,stroke:#4b9960,color:#173d20
+    classDef data fill:#fff5e6,stroke:#c98b2e,color:#4a2e00
+    class MAIN,BOOT,POLICY,RENDERER shell
+    class APPBOOT,TREE,SERVER,RPC,STATIC,CAP runtime
+    class DATA data
+```
+
+### Runtime logic
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant M as main.ts
+    participant B as boot.ts
+    participant T as Cordis plugin tree
+    participant W as loopback webserver
+    participant R as BrowserWindow
+
+    U->>M: Launch application
+    M->>M: app.whenReady() + single-instance lock
+    M->>B: bootDesktop({ overlays })
+    B->>B: Repair packaged profile links
+    B->>B: loadProfile("web")
+    B->>T: boot(profile bundles + user layer + desktop overlays)
+    T->>W: Bind 127.0.0.1:0
+    W-->>B: Return the OS-assigned port
+    B-->>M: Return the GUI loopback URL
+    M->>R: BrowserWindow.loadURL(url)
+    R->>W: GET / and /plugins
+    W-->>R: HTML, window.__DSH_BOOT__, and client bundles
+    R->>W: /api RPC + WebSocket connection
+    W->>T: Invoke agent, tool, session, fs, shell, and model capabilities
+    T-->>W: Return results and events
+    W-->>R: RPC responses / live events
+    R-->>U: Render sessions, tools, workspaces, and settings
+    U->>M: Quit application
+    M->>T: Await dispose() from before-quit
+    T->>W: Dispose plugin tree and Web server
+    W-->>M: Cleanup complete
+    M-->>U: Exit process
+```
+
+### Key code locations
+
+| Stage | Entry point | Responsibility |
+|---|---|---|
+| Electron shell | `apps/desktop/src/main.ts` | Window, menu, single instance, navigation security, permission reminders, graceful shutdown |
+| Harness boot | `apps/desktop/src/boot.ts` | Load the `web` profile, compose bundles and user patches, bind the loopback port |
+| Renderer entry | `apps/desktop/src/preload.cts` + `BrowserWindow.loadURL()` | Load the official Harness Web GUI in a sandboxed renderer |
+| Capabilities | `packages/host/*`, `packages/fs/*`, `packages/shell/*`, `packages/llm/*` | Provide filesystem, shell, model, session, and related plugin capabilities |
+| Desktop packaging | `apps/desktop/electron-builder.yml` | Configure asar, native-module unpacking, platform installers, and icons |
+
+See [docs/architecture.md](docs/architecture.md) for the detailed layering and repository map, [docs/building.md](docs/building.md) for the build/signing/release workflow, and [docs/quality.md](docs/quality.md) for Electron security and lifecycle verification.
 
 ## Data & persistence
 

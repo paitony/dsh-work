@@ -13,7 +13,7 @@ flowchart TB
         BOOT --> OVERLAY["桌面 overlays<br/>webserver 127.0.0.1:0 · 预设 · 隐藏 URL"]
         BASE & WEBAPP & USER & OVERLAY --> TREE["Cordis 插件树"]
         TREE --> WS["webserver<br/>127.0.0.1:随机端口"]
-        TREE --> PICKER["picker.ts<br/>Electron 目录选择器"]
+        TREE --> PICKER["directory-picker capability<br/>Harness 原生目录选择器"]
     end
     subgraph renderer["渲染进程（BrowserWindow）"]
         UI["harness Web GUI<br/>window.__DSH_BOOT__ 引导"]
@@ -24,7 +24,7 @@ flowchart TB
     WS -- "http://127.0.0.1:&lt;port&gt;" --> UI
     BUNDLES -- "静态资源" --> WS
     API -- "fetch / upgrade" --> WS
-    WSFLOW -- "dialog.showOpenDialog" --> PICKER
+    WSFLOW -- "directory-picker capability" --> PICKER
 
     classDef process fill:#eef,stroke:#88a
     class main,renderer process
@@ -75,7 +75,7 @@ sequenceDiagram
 dsh-work/
 ├── apps/
 │   ├── desktop/          # 本仓库：Electron 桌面壳
-│   │   ├── src/          #   main / boot / picker / preload / permissions
+│   │   ├── src/          #   main / boot / preload / permissions / window-policy
 │   │   ├── config/       #   agent-presets（standard/code/cordis/minimal）
 │   │   └── tests/        #   无头冒烟测试
 │   ├── cli/              # dsh CLI（dsh web 等）
@@ -96,6 +96,6 @@ dsh-work/
 
 - **进程内引导**：Electron 主进程直接引导 harness（复用 `dsh-app-boot`），无子进程、无端口解析；
 - **渲染层零改动**：加载 harness 官方 Web 前端，所有功能（会话、工具、文件夹、模型设置）与 `dsh web` 逐字节一致；
-- **目录选择器走能力缝**：通过 `directory-picker` seam 提供 Electron 原生对话框，替代 osascript/zenity 子进程；
+- **目录选择器走能力缝**：通过 `directory-picker` capability 复用 Harness 的平台原生 provider，桌面壳不再复制一套 picker 实现；
 - **Electron 环境适配**：`--expose-internals` + execArgv 镜像（vendored loader 依赖 Node 内部模块）；
 - **打包适配**：完整依赖闭包 asarUnpack（符号链接无法穿越 asar）、预设随包挂载、`singleArchFiles` 处理原生模块的双架构合并。
