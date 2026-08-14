@@ -24,8 +24,8 @@ const ALL_KINDS = ['dependencies', 'devDependencies', 'optionalDependencies', 'p
 
 /**
  * Workspace areas that never reach a user: repository tooling and gates (the
- * root manifest), test infrastructure, the documentation site, the runnable
- * demo leaves, and the native launcher's build workspace. A runtime
+ * root manifest), test infrastructure, the runnable demo leaves, and the
+ * native launcher's build workspace. A runtime
  * declaration by anything outside these areas is a disclosure-relevant
  * runtime dependency because any plugin package can be mounted from a user's
  * `cordis.yml`.
@@ -34,7 +34,6 @@ const DEV_ONLY_AREAS = [
   'package.json',
   'packages/test-support/',
   'packages/test-support/client-runtime/',
-  'website/',
   'examples/',
   'native/',
 ] as const
@@ -350,7 +349,7 @@ function normalizeRepo(raw: string | undefined): string | undefined {
  * External npm dependencies, tiered by which workspace area declares them at
  * runtime: a package is runtime when any manifest outside `DEV_ONLY_AREAS`
  * names it in `dependencies`/`optionalDependencies`. A package declared only
- * by tooling, test infrastructure, the website, or the demo leaves — whatever
+ * by tooling, test infrastructure, or the demo leaves — whatever
  * the declaring section is called — is development-only.
  */
 function collectNpmDeps(): ExternalDep[] {

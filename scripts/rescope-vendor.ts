@@ -3,8 +3,7 @@
  * that rescope with `--reverse`. Every harness package declares `cordis` as a
  * peer dependency, so publication carries this framework layer too; publishing
  * it under the upstream names would squat them on the registry
- * ([rationale](../.agents/notes/implemented/process/2026-08-10-vendor-package-rescope.md),
- * [name mapping](../docs/rescope.md)).
+ * (see the manifest in `vendor/README.md`).
  *
  * The generic pass rewrites ONLY delimited, complete package-name tokens:
  * `'old'` / `"old"` / `` `old` `` / `'old/subpath'`, plus a YAML `name: old`
@@ -104,6 +103,31 @@ const GENERIC_SKIPS: readonly GenericSkip[] = [
   // GROUP_ORDER holds `packages/<group>/` directory names, not package names.
   { file: 'scripts/gen-module-graph.ts', upstream: ['cordis'] },
   { file: 'scripts/gen-doc-graphs.ts', upstream: ['cordis'] },
+  // Cordis extension protocol names, tool ids, locale namespaces, and event
+  // names are product identifiers rather than npm package specifiers.
+  { file: 'apps/desktop/config/agent-presets/cordis/agent.cordis.yml', upstream: ['cordis'] },
+  { file: 'packages/api/remotes/src/remote-events.ts', upstream: ['cordis'] },
+  { file: 'packages/client/ui-settings-plugin-inventory/src/client/PluginInventorySettingsTab.tsx', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-client-runner/src/client/index.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-client-runner/src/client/runtime.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-client-runner/tests/orchestrator.client.spec.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-client-runner/tests/plugin.client.spec.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-host-runner/src/index.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-host-runner/src/inspect-registry.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-host-runner/src/types.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-host-runner/tests/helpers.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-host-runner/tests/runner.spec.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-host-runner/tests/versioning.spec.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/tool-cordis/src/api-catalog.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/tool-cordis/src/providers.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/ui-cordis/src/client/CordisActionRow.tsx', upstream: ['cordis'] },
+  { file: 'packages/extensions/ui-cordis/src/client/CordisDefineRow.tsx', upstream: ['cordis'] },
+  { file: 'packages/extensions/ui-cordis/src/client/CordisPanel.tsx', upstream: ['cordis'] },
+  { file: 'packages/extensions/ui-cordis/src/client/CordisRunRow.tsx', upstream: ['cordis'] },
+  { file: 'packages/extensions/ui-cordis/src/client/index.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/ui-cordis/src/client/inventory.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/ui-cordis/src/client/locales.ts', upstream: ['cordis'] },
+  { file: 'scripts/gen-cordis-catalog.ts', upstream: ['cordis'] },
 ]
 
 /** A string that must appear exactly `count` times once the rescope has run. */
@@ -257,14 +281,6 @@ const EXACT_EDITS: readonly ExactEdit[] = [
     expect: 1,
   },
   {
-    // The root contract claimed vendored packages keep their upstream names.
-    id: 'root-agents-vendored-name-contract',
-    file: 'AGENTS.md',
-    find: 'vendored packages keep upstream names and are `private: true`. `cordis` is a peerDependency (+ dev) of every harness package.',
-    replace: 'vendored packages are rescoped ([mapping](docs/rescope.md)) and `private: true`. `@deepseek-ai/cordis` is a peerDependency (+ dev) of every harness package.',
-    expect: 1,
-  },
-  {
     // The client purity gate reads `@deepseek-ai/` as "another plugin package".
     // The rescope moves the vendored framework and its libraries into that
     // namespace, where the gate would reject the library imports client
@@ -289,37 +305,6 @@ const VENDORED_LIBRARY = /^@deepseek-ai\\/(cosmokit|schemastery)(\\/|$)/
     find: '        if (INLINE_SAFE.test(source) || GENERATED_REMOTE.test(source)) return null // wire contribution: inline is the point',
     replace: `        if (VENDORED_LIBRARY.test(source)) return null // vendored library: inline, no shared identity
         if (INLINE_SAFE.test(source) || GENERATED_REMOTE.test(source)) return null // wire contribution: inline is the point`,
-    expect: 1,
-  },
-  {
-    // The step-1 file tree told the reader to keep the upstream name, one
-    // paragraph above the invariant that says to rescope it.
-    id: 'vendoring-cookbook-tree-comment',
-    file: 'docs/cookbook/adding-a-vendored-package.md',
-    find: '  package.json     # from upstream; set "private": true, keep name/exports/type',
-    replace: '  package.json     # from upstream; set "private": true, rescope the name, keep exports/type',
-    expect: 1,
-  },
-  {
-    id: 'vendoring-cookbook-tree-comment-zh',
-    file: 'docs/cookbook/adding-a-vendored-package.zh.md',
-    find: '  package.json     # from upstream; set "private": true, keep name/exports/type',
-    replace: '  package.json     # from upstream; set "private": true, rescope the name, keep exports/type',
-    expect: 1,
-  },
-  {
-    // The checklist told the next vendoring to keep upstream's name.
-    id: 'vendoring-cookbook-name-invariant',
-    file: 'docs/cookbook/adding-a-vendored-package.md',
-    find: "keep upstream's `name`/`version`/`exports`/`type`",
-    replace: "rescope the `name` ([mapping](../rescope.md)) while keeping upstream's `version`/`exports`/`type`",
-    expect: 1,
-  },
-  {
-    id: 'vendoring-cookbook-name-invariant-zh',
-    file: 'docs/cookbook/adding-a-vendored-package.zh.md',
-    find: '保留上游的 `name`/`version`/`exports`/`type`',
-    replace: '改写 `name` 的 scope（[映射](../rescope.md)），保留上游的 `version`/`exports`/`type`',
     expect: 1,
   },
   {
@@ -467,8 +452,6 @@ function excluded(file: string): boolean {
   // Recorded model payloads quote documentation verbatim, so they must mirror the
   // sources on disk — including the notes this rescope leaves alone.
   if (file.startsWith('scripts/snapshots/')) return true
-  // The mapping documents state both names on purpose.
-  if (file === 'docs/rescope.md' || file === 'docs/rescope.zh.md') return true
   if (file.endsWith('.i18n.yaml')) return true // blob-hash records, re-recorded by the pairing gate
   if (file === 'pnpm-lock.yaml') return true // regenerated by pnpm install
   if (/^vendor\/[^/]+\/(README\.md|LICENSE)$/.test(file)) return true // upstream files kept verbatim
@@ -599,7 +582,7 @@ function main(): void {
   const all = patterns(reverse)
   const files = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
     .split('\0')
-    .filter(file => file !== '' && !excluded(file))
+    .filter(file => file !== '' && existsSync(resolve(root, file)) && !excluded(file))
 
   const counts = new Map<string, { files: number; lines: number }>()
   const failures: string[] = []

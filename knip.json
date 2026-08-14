@@ -14,8 +14,7 @@
     "where.exe"
   ],
   "ignoreWorkspaces": [
-    "vendor/*",
-    "python/sdk-runtime"
+    "vendor/*"
   ],
   "ignoreDependencies": [
     "@yarnpkg/cli-dist",
@@ -25,7 +24,8 @@
     ".": {
       "entry": [
         "scripts/**/*.mjs",
-        "scripts/**/*.cjs"
+        "scripts/**/*.cjs",
+        "scripts/build-exe-for-python-sdk.ts"
       ],
       "project": [
         "scripts/**/*.ts",
@@ -72,6 +72,7 @@
       ],
       "ignoreDependencies": [
         "@deepseek-ai/.+"
+      ]
     },
     "apps/desktop": {
       "entry": [
@@ -82,7 +83,6 @@
       ],
       "ignoreDependencies": [
         "@deepseek-ai/.+"
-      ]
       ]
     },
     "packages/util/home": {
@@ -240,18 +240,6 @@
         "src/**/*.tsx",
         "tests/**/*.ts",
         "tests/**/*.tsx"
-      ]
-    },
-    "website": {
-      "project": [
-        "**/*.ts"
-      ],
-      "ignoreDependencies": [
-        "@braintree/sanitize-url",
-        "cytoscape",
-        "cytoscape-cose-bilkent",
-        "dayjs",
-        "debug"
       ]
     },
     "packages/*/*": {
@@ -749,17 +737,6 @@
       ],
       "ignoreDependencies": [
         "@deepseek-ai/.+"
-    },
-    "apps/desktop": {
-      "entry": [
-        "tests/**/*.ts"
-      ],
-      "project": [
-        "src/**/*.ts"
-      ],
-      "ignoreDependencies": [
-        "@deepseek-ai/.+"
-      ]
       ]
     },
     "packages/client/modules": {
@@ -793,17 +770,6 @@
     "packages/bundle/base": {
       "ignoreDependencies": [
         "@deepseek-ai/.+"
-    },
-    "apps/desktop": {
-      "entry": [
-        "tests/**/*.ts"
-      ],
-      "project": [
-        "src/**/*.ts"
-      ],
-      "ignoreDependencies": [
-        "@deepseek-ai/.+"
-      ]
       ]
     },
     "packages/bundle/headless": {
@@ -814,17 +780,6 @@
     "packages/bundle/web-app": {
       "ignoreDependencies": [
         "@deepseek-ai/.+"
-    },
-    "apps/desktop": {
-      "entry": [
-        "tests/**/*.ts"
-      ],
-      "project": [
-        "src/**/*.ts"
-      ],
-      "ignoreDependencies": [
-        "@deepseek-ai/.+"
-      ]
       ]
     }
   }

@@ -57,16 +57,16 @@ import type {} from '@deepseek-ai/dsh-host-webserver'
  * down under lib/types/ — probe both so the same module works from src/ and
  * from the built tree.
  */
-export const INSTALL_ANCHOR = (() => {
+const INSTALL_ANCHOR = (() => {
   const source = fileURLToPath(new URL('../package.json', import.meta.url))
   return existsSync(source) ? source : fileURLToPath(new URL('../../package.json', import.meta.url))
 })()
 
 /** Diagnostic prefix for profile/boot failures, mirroring the `dsh` bin's naming. */
-export const BIN_NAME = 'dsh-desktop'
+const BIN_NAME = 'dsh-desktop'
 
 /** The profile the desktop shell boots — the same `web` template `dsh web` uses. */
-export const DESKTOP_PROFILE = 'web'
+const DESKTOP_PROFILE = 'web'
 
 /** The empty root entry list every profile tree patches over (identical to the CLI's root). */
 const PROFILE_ROOT_CONFIG = [
@@ -77,7 +77,7 @@ const PROFILE_ROOT_CONFIG = [
 ].join('\n') + '\n'
 
 /** Root config filename inside a profile directory. */
-export const PROFILE_ROOT_FILENAME = 'cordis.yml'
+const PROFILE_ROOT_FILENAME = 'cordis.yml'
 
 /** The session-telemetry row id the DSH_TELEMETRY_DISABLED switch targets. */
 const TELEMETRY_ROW_ID = 'session-telemetry-otel'
