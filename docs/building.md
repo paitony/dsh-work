@@ -90,8 +90,8 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64 # Apple Silicon；Intel �
 git checkout main
 git pull --ff-only origin main
 git push origin main
-git tag -a v0.1.0-rc.8 -m "release: v0.1.0-rc.8"
-git push origin v0.1.0-rc.8
+git tag -a v0.1.0-rc.9 -m "release: v0.1.0-rc.9"
+git push origin v0.1.0-rc.9
 ```
 
 仓库中的 `.github/workflows/release.yml` 已把这一步自动化：推送 `v*` 标签后，在 macOS、Windows、Linux runner 上分别构建目标包，下载所有产物并创建 GitHub Release。提供签名和公证 secrets 时，electron-builder 会在对应平台执行正式签名；未提供时仍会生成可用于内部验收的未签名包。

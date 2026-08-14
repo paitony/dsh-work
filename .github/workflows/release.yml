@@ -118,10 +118,17 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$(find apps/desktop/release -maxdepth 1 -type f -name "*-${RELEASE_VERSION}-*" -print -quit)"
+      - name: Collect release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p apps/desktop/release-assets
+          find apps/desktop/release -mindepth 1 -maxdepth 1 -type f -exec cp -p {} apps/desktop/release-assets/ \;
+          test -n "$(find apps/desktop/release-assets -maxdepth 1 -type f -print -quit)"
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.target }}-${{ needs.version.outputs.version }}
-          path: apps/desktop/release/*
+          path: apps/desktop/release-assets/*
           if-no-files-found: error
 
   publish:
@@ -142,4 +149,4 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
-          files: release/**
+          files: release/*
