@@ -64,6 +64,8 @@ jobs:
             builder_args: --linux --x64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      HAS_CODE_SIGNING: ${{ secrets.CSC_LINK != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
@@ -81,8 +83,14 @@ jobs:
         run: pnpm --filter @deepseek-ai/dsh-desktop build
       - name: Desktop smoke test
         run: pnpm --filter @deepseek-ai/dsh-desktop smoke
-      - name: Package desktop
-        run: pnpm --filter @deepseek-ai/dsh-desktop exec electron-builder ${{ matrix.builder_args }} --publish never -c.extraMetadata.version=${{ needs.version.outputs.version }}
+      - name: Package desktop (unsigned)
+        if: ${{ env.HAS_CODE_SIGNING != 'true' }}
+        run: pnpm --filter @deepseek-ai/dsh-desktop exec electron-builder ${{ matrix.builder_args }} --publish never --config.extraMetadata.version=${{ needs.version.outputs.version }}
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+      - name: Package desktop (signed)
+        if: ${{ env.HAS_CODE_SIGNING == 'true' }}
+        run: pnpm --filter @deepseek-ai/dsh-desktop exec electron-builder ${{ matrix.builder_args }} --publish never --config.extraMetadata.version=${{ needs.version.outputs.version }}
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
           CSC_LINK: ${{ secrets.CSC_LINK }}
