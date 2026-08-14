@@ -1,6 +1,6 @@
 /**
  * Electron main: owns the app window and lifecycle and boots the harness
- * through {@link bootDesktop}, swapping in the Electron directory picker.
+ * through {@link bootDesktop}, running the harness's own native directory picker.
  * The renderer is the harness's own web GUI served over the loopback
  * webserver, so every dsh web feature (sessions, tools, the workspace/folder
  * flow, model settings) behaves exactly as in the browser.
@@ -13,7 +13,6 @@ import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, dialog, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 import { bootDesktop, desktopOverlayPatches, type DesktopBoot } from './boot.ts'
-import { electronPickerOverlay } from './picker.ts'
 import { detectPermissionIssues, remindPermissionIssues } from './permissions.ts'
 import { isAllowedExternalUrl, isSameOrigin } from './window-policy.ts'
 
@@ -153,7 +152,7 @@ async function start(): Promise<void> {
   await log('boot start')
   try {
     harness = await bootDesktop({
-      overlays: [...desktopOverlayPatches(), ...electronPickerOverlay()],
+      overlays: desktopOverlayPatches(),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

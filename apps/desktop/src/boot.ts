@@ -21,7 +21,7 @@ if (!process.execArgv.includes('--expose-internals')) {
  * exactly the `dsh web` composition.
  *
  * This module is deliberately Electron-free: the Electron shell (`main.ts`)
- * supplies the desktop-specific pieces (the Electron directory-picker overlay),
+ * supplies the desktop-specific pieces (the directory-picker capability via the harness's native backend),
  * and the same composition can be booted headlessly under plain Node for the
  * smoke test.
  * @module @deepseek-ai/dsh-desktop/boot

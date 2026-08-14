@@ -1,6 +1,6 @@
 /**
  * Desktop shell package root: the Electron-free boot surface. The Electron
- * pieces (main, preload, and the directory-picker overlay) are imported by
+ * pieces (main, preload, and permissions) are imported by
  * subpath so a headless consumer never loads the electron module.
  * @module @deepseek-ai/dsh-desktop
  */

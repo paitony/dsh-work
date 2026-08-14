@@ -1,7 +1,7 @@
 /**
  * Headless smoke test for the desktop composition: boots the same harness the
  * Electron shell boots (web profile + desktop overlays, minus the Electron
- * picker swap) under plain Node with an isolated Harness home, then asserts
+ * electron-specific swaps) under plain Node with an isolated Harness home, then asserts
  * the GUI contract end to end: the SPA index carries window.__DSH_BOOT__, a
  * client bundle serves from /plugins, and the /api gateway answers a real
  * unary RPC. Run with: pnpm --filter @deepseek-ai/dsh-desktop smoke
