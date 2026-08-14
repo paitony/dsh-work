@@ -69,7 +69,7 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:linux
 ```
 
 Artifacts are written to `apps/desktop/release/`. For macOS architecture-specific
-packages, use `dist:mac:arm64`, `dist:mac:x64`, or `dist:mac:universal`.
+packages, use `dist:mac:arm64` or `dist:mac:x64`. Universal packaging is intentionally not offered because the app includes architecture-specific native modules that cannot be safely merged.
 Windows and Linux packages are best built and launched on their matching CI runners;
 macOS cross-builds can produce an artifact but do not replace target-platform testing.
 

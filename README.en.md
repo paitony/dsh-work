@@ -22,13 +22,13 @@ Harness manages the API key locally through its credentials feature; it is not w
 - **Full feature set**: the renderer is the official harness web GUI — sessions, tool calls, the workspace/folder flow, model and API-key settings, using the same plugin and API composition as `dsh web`;
 - **Zero runtime dependencies**: Electron bundles Node; all runtime dependencies and the frontend dist ship inside the installer;
 - **Native feel**: application icon, OS-native directory picker, native menus, single-instance, graceful harness shutdown on quit;
-- **Cross-platform**: macOS (Intel / Apple Silicon / Universal), Windows, Linux packaging targets;
+- **Cross-platform**: macOS (Intel / Apple Silicon), Windows, Linux packaging targets;
 - **Permission guidance**: startup capability checks (macOS Full Disk Access / Seatbelt, Windows PowerShell) with one-time reminders and links into System Settings;
 - **Own data**: sessions, settings and credentials persist under `~/.dsh`; reopening shows all previous runs.
 
 ## Installation
 
-Download the matching installer from [GitHub Releases](https://github.com/paitony/dsh-work/releases): `DeepSeek Harness-*-mac-arm64.dmg` for Apple Silicon, `DeepSeek Harness-*-mac-x64.dmg` for Intel Macs, `DeepSeek Harness-*-mac-universal.dmg` for either Mac architecture, `DeepSeek Harness-*-win-x64.exe` for Windows, or the x64 AppImage/deb package for Linux. Official releases must be code-signed and notarized; unsigned local builds may be blocked by Gatekeeper or SmartScreen.
+Download the matching installer from [GitHub Releases](https://github.com/paitony/dsh-work/releases): `DeepSeek Harness-*-mac-arm64.dmg` for Apple Silicon, `DeepSeek Harness-*-mac-x64.dmg` for Intel Macs, `DeepSeek Harness-*-win-x64.exe` for Windows, or the x64 AppImage/deb package for Linux. Official releases must be code-signed and notarized; unsigned local builds may be blocked by Gatekeeper or SmartScreen.
 
 ## Building from source
 
@@ -60,12 +60,11 @@ pnpm --filter @deepseek-ai/dsh-desktop smoke # headless smoke test (no display n
 ```sh
 pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64      # macOS Apple Silicon (dmg + zip)
 pnpm --filter @deepseek-ai/dsh-desktop dist:mac:x64        # macOS Intel
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:universal  # macOS universal (fat binary)
 pnpm --filter @deepseek-ai/dsh-desktop dist:win            # Windows NSIS installer
 pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + deb
 ```
 
-Artifacts land in `apps/desktop/release/`. Release distribution requires code signing and notarization (macOS Developer ID, Windows certificate); unsigned builds are blocked by Gatekeeper / SmartScreen. See `docs/building.md` for CI and signing guidance.
+Artifacts land in `apps/desktop/release/`. macOS releases are separate arm64 and x64 packages because the app includes architecture-specific native modules that cannot be safely merged into a Universal binary. Release distribution requires code signing and notarization (macOS Developer ID, Windows certificate); unsigned builds are blocked by Gatekeeper / SmartScreen. See `docs/building.md` for CI and signing guidance.
 
 ## Architecture
 

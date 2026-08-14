@@ -24,17 +24,16 @@ npmRebuild: true
 # Architecture is chosen per build via the electron-builder CLI:
 #   --mac --arm64    Apple Silicon
 #   --mac --x64      Intel
-#   --mac --universal  one fat binary for both (merged by @electron/universal)
-# Native modules (node-pty, koffi, node-addon-*) ship one .node per arch and
-# cannot be lipo-merged, so they stay unmerged and the runtime picks the
-# arch-correct file.
+# A macOS Universal target is intentionally not configured: native modules such
+# as node-pty, koffi, and sharp ship architecture-specific .node files that
+# cannot be safely lipo-merged by electron-builder. Release both single-arch
+# packages so each package contains the correct native module set.
 mac:
   category: public.app-category.developer-tools
   target:
     - dmg
     - zip
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
-  singleArchFiles: "**/*.node"
 win:
   target:
     - nsis

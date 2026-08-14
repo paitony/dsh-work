@@ -35,7 +35,7 @@ pnpm run verify-mermaid
 
 ## 发布前清单
 
-- 在 macOS 构建 arm64、x64 或 Universal 包，并在相应硬件上启动一次；在 Windows 和 Linux runner 上分别构建并启动对应安装包。
+- 在 macOS 分别构建 arm64、x64 包，并在相应硬件上启动一次；在 Windows 和 Linux runner 上分别构建并启动对应安装包。
 - 检查安装包包含 `app.asar`、`app.asar.unpacked/node_modules`、前端 dist 和 `config/agent-presets`，且首次运行使用隔离的测试 `DSH_HOME`。
 - 使用 Developer ID / Windows 代码签名证书完成签名；macOS 完成 notarization；发布页提供校验和、架构和已知权限要求。
 - 不把 `lib/`、`dist/`、`release/`、用户的 `~/.dsh` 或任何 API Key 提交到仓库。

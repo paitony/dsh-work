@@ -99,4 +99,4 @@ dsh-work/
 - **渲染层复用**：加载 harness 官方 Web 前端，与 `dsh web` 共用会话、工具、文件夹和模型设置等插件与接口；
 - **目录选择器走能力缝**：通过 `directory-picker` capability 复用 Harness 的平台原生 provider，桌面壳不再复制一套 picker 实现；
 - **Electron 环境适配**：`--expose-internals` + execArgv 镜像（vendored loader 依赖 Node 内部模块）；
-- **打包适配**：完整依赖闭包 asarUnpack（符号链接无法穿越 asar）、预设随包挂载、`singleArchFiles` 处理原生模块的双架构合并。
+- **打包适配**：完整依赖闭包 asarUnpack（符号链接无法穿越 asar）、预设随包挂载；macOS 发布按 arm64 和 x64 分别打包，以保留原生模块的架构专用 `.node` 文件。

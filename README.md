@@ -22,7 +22,7 @@ API Key 由 Harness 的凭据功能在本机管理，不会写进代码仓库；
 - **完整功能**：使用 harness 官方 Web GUI —— 会话、工具调用、工作区/文件夹流程、模型与 API Key 设置，与 `dsh web` 共用同一套插件和接口；
 - **零运行时依赖**：Electron 内置 Node，应用运行所需的依赖与前端 dist 全部打进安装包；
 - **原生体验**：应用图标、系统原生目录选择器、原生菜单、单实例、退出时优雅关闭 harness；
-- **跨平台**：macOS（Intel / Apple Silicon / Universal）、Windows、Linux 打包目标齐全；
+- **跨平台**：macOS（Intel / Apple Silicon）、Windows、Linux 打包目标齐全；
 - **权限引导**：启动时自动检测 macOS「完全磁盘访问」/ Seatbelt、Windows PowerShell 等能力缺口并引导设置；
 - **数据自持**：会话、设置、凭据持久化在 `~/.dsh`，每次打开都能看到此前的运行记录。
 
@@ -34,7 +34,6 @@ API Key 由 Harness 的凭据功能在本机管理，不会写进代码仓库；
 |---|---|---|
 | macOS Apple Silicon | `DeepSeek Harness-*-mac-arm64.dmg` | M1/M2/M3/M4 |
 | macOS Intel | `DeepSeek Harness-*-mac-x64.dmg` | Intel Mac |
-| macOS 通用 | `DeepSeek Harness-*-mac-universal.dmg` | 两种架构都可运行（体积更大） |
 | Windows | `DeepSeek Harness-*-win-x64.exe` | NSIS 安装器 |
 | Linux | AppImage / deb | x64 |
 
@@ -72,18 +71,17 @@ pnpm --filter @deepseek-ai/dsh-desktop smoke # 无头冒烟测试（不需要显
 ```sh
 pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64      # macOS Apple Silicon（dmg + zip）
 pnpm --filter @deepseek-ai/dsh-desktop dist:mac:x64        # macOS Intel
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:universal  # macOS 通用包（双架构 fat binary）
 pnpm --filter @deepseek-ai/dsh-desktop dist:win            # Windows NSIS 安装器
 pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + deb
 ```
 
-产物输出到 `apps/desktop/release/`。
+产物输出到 `apps/desktop/release/`。macOS 当前发布两个单架构包，因为 Electron 应用包含无法安全合并的架构专用原生模块；Apple Silicon 和 Intel 用户分别下载对应包。
 
 ### 发布签名与公证
 
 - **macOS**：需要 Developer ID 证书（`CSC_LINK` / `CSC_KEY_PASSWORD`）签名并公证，否则 Gatekeeper 拦截下载与启动。参见 [electron-builder 签名文档](https://www.electron.build/code-signing)；
 - **Windows**：需要代码签名证书（`CSC_LINK` 或 signtool）消除 SmartScreen 警告；
-- **CI**：GitHub Actions 会在 macOS、Windows、Linux runner 上分别构建和验收，具体目标以 `.github/workflows/` 和 `docs/building.md` 为准。
+- **CI**：GitHub Actions 会在 macOS、Windows、Linux runner 上分别构建和验收；推送 `vX.Y.Z` 或 `vX.Y.Z-rc.N` 标签会按标签版本创建 GitHub Release，具体目标和签名 secrets 以 `.github/workflows/` 和 `docs/building.md` 为准。
 
 <details>
 <summary>面向开发者：内置 Plugins 能力清单</summary>

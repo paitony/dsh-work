@@ -25,8 +25,7 @@
     "dist:win": "pnpm run build && electron-builder --win",
     "dist:linux": "pnpm run build && electron-builder --linux",
     "dist:mac:arm64": "pnpm run build && electron-builder --mac --arm64",
-    "dist:mac:x64": "pnpm run build && electron-builder --mac --x64",
-    "dist:mac:universal": "pnpm run build && electron-builder --mac --universal"
+    "dist:mac:x64": "pnpm run build && electron-builder --mac --x64"
   },
   "license": "MIT",
   "dependencies": {

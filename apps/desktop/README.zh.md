@@ -55,7 +55,7 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:win
 pnpm --filter @deepseek-ai/dsh-desktop dist:linux
 ```
 
-产物写入 `apps/desktop/release/`。macOS 指定架构时使用 `dist:mac:arm64`、`dist:mac:x64` 或 `dist:mac:universal`。
+产物写入 `apps/desktop/release/`。macOS 指定架构时使用 `dist:mac:arm64` 或 `dist:mac:x64`。当前不提供 Universal 包，因为应用包含不能安全合并的架构专用原生模块。
 Windows 和 Linux 最好在对应的 CI runner 上构建并启动验收；macOS 可以交叉构建出文件，但不能替代目标平台测试。
 
 electron-builder 会解包 `node_modules/**`，因为 harness 的 profile fallback 使用的文件系统链接无法穿过 `app.asar` 文件。Agent 预设随包放在 `config/agent-presets`。签名、公证、CI 目标和清理说明见[构建文档](../../docs/building.md)。
