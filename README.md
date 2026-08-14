@@ -8,10 +8,19 @@ English: [README.en.md](README.en.md)
 
 更多真实运行状态见[软件界面截图](docs/screenshots.md)。
 
+## 5 分钟开始使用
+
+1. 从 [GitHub Releases](https://github.com/paitony/dsh-work/releases) 下载与你的系统和芯片匹配的安装包。
+2. 安装并打开应用。下载的桌面版不需要 Node.js、pnpm 或其他命令行环境。
+3. 第一次打开后进入「设置 → 模型」，填写 DeepSeek API Key 并保存。
+4. 选择一个工作区，回到对话页发送第一条消息。
+
+API Key 由 Harness 的凭据功能在本机管理，不会写进代码仓库；如果你只想浏览界面，可以先跳过模型配置。
+
 ## 特性
 
-- **完整功能**：渲染层就是 harness 官方 Web GUI —— 会话、工具调用、工作区/文件夹流程、模型与 API Key 设置，与 `dsh web` 逐字节一致；
-- **零运行时依赖**：Electron 内置 Node，所有依赖与前端 dist 全部打进安装包；
+- **完整功能**：使用 harness 官方 Web GUI —— 会话、工具调用、工作区/文件夹流程、模型与 API Key 设置，与 `dsh web` 共用同一套插件和接口；
+- **零运行时依赖**：Electron 内置 Node，应用运行所需的依赖与前端 dist 全部打进安装包；
 - **原生体验**：应用图标、系统原生目录选择器、原生菜单、单实例、退出时优雅关闭 harness；
 - **跨平台**：macOS（Intel / Apple Silicon / Universal）、Windows、Linux 打包目标齐全；
 - **权限引导**：启动时自动检测 macOS「完全磁盘访问」/ Seatbelt、Windows PowerShell 等能力缺口并引导设置；
@@ -74,9 +83,10 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + de
 
 - **macOS**：需要 Developer ID 证书（`CSC_LINK` / `CSC_KEY_PASSWORD`）签名并公证，否则 Gatekeeper 拦截下载与启动。参见 [electron-builder 签名文档](https://www.electron.build/code-signing)；
 - **Windows**：需要代码签名证书（`CSC_LINK` 或 signtool）消除 SmartScreen 警告；
-- **CI**：建议用 GitHub Actions 多平台矩阵构建（`macos-14` 打 arm64 + universal、`windows-latest` 打 win、`ubuntu-latest` 打 linux），参见 `docs/building.md`。
+- **CI**：GitHub Actions 会在 macOS、Windows、Linux runner 上分别构建和验收，具体目标以 `.github/workflows/` 和 `docs/building.md` 为准。
 
-## 内置 Plugins
+<details>
+<summary>面向开发者：内置 Plugins 能力清单</summary>
 
 桌面端继承了 harness 的全部插件能力（`packages/bundle/base` 组合），并按平台启用：
 
@@ -99,6 +109,8 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + de
 
 同时随包内置 **agent 预设**（`apps/desktop/config/agent-presets`）：`standard`（默认）、`code`、`cordis`、`minimal`，首次会话自动使用 `standard`。
 
+</details>
+
 ## 权限
 
 应用启动时会自动检测系统能力缺口（仅提示，不阻塞启动），每个问题只提醒一次，并提供直达系统设置面板的按钮：
@@ -109,7 +121,7 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + de
 
 ## 数据与持久化
 
-用户数据统一存放在 `~/.dsh`（与 `dsh` CLI 共享）：`sessions/`（会话日志）、`settings.yaml`、`storages/`（工作区列表与投影缓存）、`profiles/`。再次打开应用会自动显示此前的会话与工作区。
+用户数据统一存放在 `~/.dsh`（与 `dsh` CLI 共享）。会话、设置、凭据和工作区都由 Harness 的对应插件管理；再次打开应用会自动显示此前的会话与工作区。不要把自己的 `~/.dsh` 目录或 API Key 提交到 Git。
 
 ## 架构
 
@@ -190,6 +202,7 @@ sequenceDiagram
 
 ## 常见问题
 
+- **打开后没有模型或无法发送消息**：进入「设置 → 模型」，添加 DeepSeek API Key，并确认选择了可用模型。
 - **打开后提示“安全沙箱不可用”**：当前 macOS 未提供 `sandbox-exec`。可在设置中把权限模式切换到“完全访问”后重试，或升级 macOS。
 - **无法写入桌面/文稿/下载**：在系统设置中为 DeepSeek Harness 开启「完全磁盘访问」。
 - **Windows 上终端工具不可用**：安装 [PowerShell 7](https://github.com/PowerShell/PowerShell/releases)。

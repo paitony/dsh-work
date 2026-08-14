@@ -2,49 +2,45 @@
 
 中文文档: [README.zh.md](README.zh.md)
 
-The Electron desktop shell for [DeepSeek Harness](../../README.md): one installable
-app for Windows, macOS, and Linux that boots the exact `dsh web` composition and
-shows the same browser GUI in a native window. Non-technical users never touch a
-terminal: the app starts the harness, opens the window, and exposes the full web
-feature set — sessions, tools, the workspace/folder flow, model settings, and the
-API-key setup — with an OS-native directory chooser.
+This directory contains the Electron shell for [DeepSeek Harness](../../README.md).
+It packages the harness web composition into an installable Windows, macOS, and Linux
+application. End-user installation instructions live in the [repository README](../../README.md).
 
 ![Running desktop interface](../../assets/desktop-main-window.png)
 
 Additional real application states: [runtime screenshot gallery](../../docs/screenshots.md).
 
-The system architecture and runtime sequence diagrams are documented in
-[`docs/architecture.md`](../../docs/architecture.md) and summarized in the
-repository [README](../../README.md).
+## What this package owns
 
-## How it works
+- `main.ts` owns the Electron window, menu, single-instance lock, navigation policy,
+  permission reminders, diagnostics, and shutdown.
+- `boot.ts` boots the harness in the Electron main process through the same
+  `dsh-app-boot` profile machinery used by the CLI.
+- `preload.cts` exposes the small, read-only `dshDesktop` surface to the sandboxed renderer.
+- The renderer is the harness Web GUI served by the harness loopback webserver; this
+  package does not maintain a second desktop-only UI or directory-picker implementation.
 
-- The Electron main process boots the harness **in-process** with the same
-  profile machinery the `dsh` CLI uses (`dsh-app-boot`): the `web` profile
-  (`dsh-base` + `dsh-web-app` bundles + the user's `cordis.patch.yml` + the
-  home-level layer). Desktop overlays bind the webserver to a loopback
-  OS-assigned port and silence the URL line.
-- The renderer is the harness's own web frontend served over that loopback
-  server, so every `dsh web` behavior is byte-identical — the `/api` gateway,
-  the `/plugins` client bundles, the WebSocket event downlinks, and the
-  `window.__DSH_BOOT__` boot manifest all come from the harness itself.
-- Electron launches with `--expose-internals` and the boot mirrors it into
-  `process.execArgv`: the vendored Cordis loader uses Node's internal module
-  loader (via `node-addon-require-builtin`, unavailable in Electron) for
-  profile-anchored plugin resolution. Packaged builds resolve through the
-  packed `node_modules` instead, so the flag is only needed when running from
-  the workspace.
-- The `directory-picker` capability seam uses the Harness platform-native
-  provider, so the desktop shell does not maintain a second picker
-  implementation; headless boots use the same capability composition.
-- Sessions, settings, credentials (the API key), and the workspace live in the
-  same Harness home (`~/.dsh`) the CLI uses, so the CLI and the desktop app
-  share state.
+The directory picker is supplied through the harness `directory-picker` capability and
+its platform-native providers. This keeps the desktop shell and headless composition on
+the same capability path.
 
-## Development
+## Runtime path
 
-Prerequisites: Node `^22.19 || >=24`, pnpm 11. Electron ships its own Node; the
-pinned Electron major bundles a Node satisfying the harness engine range.
+1. Electron acquires the single-instance lock and calls `bootDesktop()`.
+2. `boot.ts` loads the `web` profile, applies the user layer and desktop overlays,
+   then waits for the webserver to bind `127.0.0.1` on an OS-assigned port.
+3. `main.ts` opens a sandboxed `BrowserWindow` at that loopback URL. The page loads
+   the harness HTML, `/plugins` client bundles, `/api` RPC, and WebSocket events.
+4. On quit, the shell waits for the boot promise and disposes the Cordis tree before
+   exiting the Electron process.
+
+See the [architecture diagrams](../../docs/architecture.md) for the full component map
+and runtime sequence.
+
+## Local development
+
+Prerequisites: Node.js `^22.19 || >=24`, pnpm 11, and Git. The packaged app itself
+does not require Node.js or pnpm.
 
 ```sh
 pnpm install
@@ -52,17 +48,17 @@ pnpm run build
 pnpm --filter @deepseek-ai/dsh-desktop dev
 ```
 
-Headless smoke test (no Electron, no display):
+The headless checks do not require a display or a real API key:
 
 ```sh
+pnpm --filter @deepseek-ai/dsh-desktop typecheck
 pnpm --filter @deepseek-ai/dsh-desktop smoke
 pnpm --filter @deepseek-ai/dsh-desktop test:policy
 pnpm --filter @deepseek-ai/dsh-desktop test:lifecycle
 ```
 
-It boots the desktop composition against a throwaway Harness home and asserts
-the GUI contract: index carries `__DSH_BOOT__`, a client bundle serves from
-`/plugins`, and `/api/host.describe` answers a real unary RPC.
+`smoke` boots the composition against a temporary Harness home and verifies the GUI
+boot manifest, a client bundle under `/plugins`, and the `host.describe` RPC.
 
 ## Packaging
 
@@ -72,90 +68,32 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:win
 pnpm --filter @deepseek-ai/dsh-desktop dist:linux
 ```
 
-Artifacts land in `apps/desktop/release/`. Local builds are unsigned; release
-distribution needs a macOS Developer ID / Windows certificate (`CSC_*`) and the
-notarization step documented by electron-builder.
+Artifacts are written to `apps/desktop/release/`. For macOS architecture-specific
+packages, use `dist:mac:arm64`, `dist:mac:x64`, or `dist:mac:universal`.
+Windows and Linux packages are best built and launched on their matching CI runners;
+macOS cross-builds can produce an artifact but do not replace target-platform testing.
 
-The packaged app ships the full dependency closure unpacked
-(`asarUnpack: node_modules/**`): the harness links its profile fallback
-(`~/.dsh/profiles/node_modules`) by symlink, and symlinks cannot traverse an
-asar archive (a plain file at the OS level), so the closure must be real
-directories. The shipped agent presets (standard/code/cordis/minimal) travel
-in `config/agent-presets` and are mounted through the same `agent-presets`
-overlay the CLI uses.
+The builder unpacks `node_modules/**` because the harness profile fallback uses
+filesystem links that cannot traverse an `app.asar` file. Agent presets are shipped in
+`config/agent-presets`. Release signing, notarization, CI targets, and cleanup guidance
+are documented in [docs/building.md](../../docs/building.md).
 
-## Structure
+## User data and security boundary
 
-| File | Owns |
+Harness data is stored in `~/.dsh`, shared with the `dsh` CLI. Electron shell state is
+kept in Electron's `userData` directory. The renderer uses context isolation, sandboxing,
+and no Node integration; navigation is restricted to the booted loopback origin, while
+allowed external links open in the system browser. See [docs/quality.md](../../docs/quality.md)
+for the verification evidence and the limits of the memory-leak checks.
+
+## Source layout
+
+| Path | Responsibility |
 |---|---|
-| `src/boot.ts` | Electron-free harness boot: profile composition, desktop overlays, teardown |
-| `src/main.ts` | Electron main: window, menu, lifecycle, screenshot verification mode |
-| `src/preload.cts` | Sandboxed preload exposing the minimal `dshDesktop` surface |
-| `src/permissions.ts` | Advisory OS capability checks and one-time permission reminders |
-| `src/window-policy.ts` | Loopback navigation and allowed external URL policy |
-| `tests/smoke.ts` | Headless end-to-end boot check |
-| `icon.png` | Cross-platform application icon |
-| `electron-builder.yml` | Cross-platform packaging targets |
-
-## Data and persistence
-
-The harness owns its user data in the Harness home (`~/.dsh`), shared with the
-`dsh` CLI: `sessions/` holds the per-workspace session logs, `settings.yaml`
-the settings, `storages/` the workspace list and projection caches, and
-`profiles/` the composition. Opening the app again shows every previous
-session, message, and workspace automatically. Electron's own `userData`
-(`~/Library/Application Support/@deepseek-ai/dsh-desktop` on macOS) holds only
-shell-level state: the diagnostic log and the one-time permission-reminder
-acknowledgements.
-
-## Permissions
-
-The shell detects OS capability gaps at startup (advisory only — it never
-blocks launching) and reminds the user once per issue, with a button that opens
-the relevant System Settings pane:
-
-- **macOS — Full Disk Access**: reading or writing the protected user
-  directories (Desktop, Documents, Downloads) requires granting the app
-  `完全磁盘访问` in System Settings. The check probes each present directory
-  with a temporary write; the reminder opens
-  `com.apple.preference.security?Privacy_AllFiles`.
-- **macOS — Seatbelt**: the harness's bash tool fails closed when
-  `/usr/bin/sandbox-exec` is unavailable (removed on some macOS releases). The
-  check probes it with a trivial profile and warns when missing.
-- **Windows — PowerShell**: the PowerShell tool needs pwsh (PowerShell 7) or
-  Windows PowerShell 5.1; the check probes PATH and warns when neither exists.
-  The Windows sandbox (restricted token + ACL) needs no elevation.
-
-No other permission is required: the directory picker uses the Harness native
-provider, path opening uses the OS default app, outbound API calls need no
-grant, and the server binds loopback only.
-
-## Packaging for both Mac architectures
-
-Electron bundles its own Node, so users never install Node or any other
-runtime. Choose the architecture at build time (see the
-[electron-builder docs](https://www.electron.build/docs/mac/)):
-
-```sh
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:x64
-pnpm --filter @deepseek-ai/dsh-desktop dist:mac:universal
-```
-
-The universal build merges the two architectures with @electron/universal;
-native modules (`node-pty`, `koffi`, `node-addon-*`) stay unmerged
-(`singleArchFiles: "**/*.node"`) so each arch loads its own binary. Release
-distribution additionally needs code signing (Developer ID) and notarization —
-without them Gatekeeper blocks the download, and an ad-hoc/unsigned build only
-runs on the machine that built it.
-
-## Known Limitations and Deferred Work
-
-- The transport is the harness's own loopback HTTP server (the codebase's
-  browser shape). The architecture notes' future Electron shape — `file://`
-  renderer with fetch carried over an IPC bridge — can slot in later by
-  swapping the transport without touching the client packages.
-- `cordis.patch.yml` hot-reload (config HMR) is not wired in the desktop boot;
-  edits take effect on the next app start.
-- No auto-update pipeline yet; it is electron-builder surface work once a
-  release channel exists.
+| `src/main.ts` | Electron process, window, menu, lifecycle, and diagnostics |
+| `src/boot.ts` | Harness profile composition, overlays, and teardown |
+| `src/preload.cts` | Sandboxed preload surface |
+| `src/permissions.ts` | Advisory OS capability checks and reminders |
+| `src/window-policy.ts` | Loopback navigation and external URL policy |
+| `tests/` | Smoke, lifecycle, and navigation-policy checks |
+| `electron-builder.yml` | Platform targets and packaged-file rules |

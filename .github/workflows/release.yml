@@ -1,6 +1,7 @@
 # Build unsigned/signed platform packages from a version tag and attach them to
-# the GitHub Release. Signing is enabled automatically when the repository
-# secrets documented in docs/building.md are present.
+# the GitHub Release. The tag is the release version passed to electron-builder;
+# signing is enabled automatically when the repository secrets documented in
+# docs/building.md are present.
 name: release
 
 on:
@@ -16,27 +17,51 @@ permissions:
   contents: read
 
 jobs:
+  version:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Validate and expose tag version
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          VERSION="$version" node <<'NODE'
+          const version = process.env.VERSION ?? ''
+          if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+            console.error(`release tag must be vX.Y.Z or vX.Y.Z-prerelease, got v${version}`)
+            process.exit(1)
+          }
+          NODE
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
   package:
     name: ${{ matrix.target }}
+    needs: version
     strategy:
       fail-fast: false
       matrix:
         include:
           - target: mac-arm64
             os: macos-14
-            command: dist:mac:arm64
+            builder_args: --mac --arm64
           - target: mac-x64
             os: macos-14
-            command: dist:mac:x64
+            builder_args: --mac --x64
           - target: mac-universal
             os: macos-14
-            command: dist:mac:universal
+            builder_args: --mac --universal
           - target: windows-x64
             os: windows-latest
-            command: dist:win
+            builder_args: --win --x64
           - target: linux-x64
             os: ubuntu-latest
-            command: dist:linux
+            builder_args: --linux --x64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -50,8 +75,14 @@ jobs:
         run: pnpm install --frozen-lockfile
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-      - name: Package
-        run: pnpm --filter @deepseek-ai/dsh-desktop ${{ matrix.command }}
+      - name: Build workspace
+        run: pnpm run build
+      - name: Build desktop package
+        run: pnpm --filter @deepseek-ai/dsh-desktop build
+      - name: Desktop smoke test
+        run: pnpm --filter @deepseek-ai/dsh-desktop smoke
+      - name: Package desktop
+        run: pnpm --filter @deepseek-ai/dsh-desktop exec electron-builder ${{ matrix.builder_args }} --publish never -c.extraMetadata.version=${{ needs.version.outputs.version }}
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -59,9 +90,16 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - name: Verify artifact version
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$(find apps/desktop/release -maxdepth 1 -type f -name "*-${RELEASE_VERSION}-*" -print -quit)"
       - uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.target }}
+          name: release-${{ matrix.target }}-${{ needs.version.outputs.version }}
           path: apps/desktop/release/*
           if-no-files-found: error
 

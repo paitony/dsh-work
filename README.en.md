@@ -8,14 +8,27 @@ An open-source project that packages [DeepSeek Harness](https://github.com/deeps
 
 See the [runtime screenshot gallery](docs/screenshots.md) for additional real application states.
 
+## Quick start
+
+1. Download the installer for your operating system and CPU from [GitHub Releases](https://github.com/paitony/dsh-work/releases).
+2. Install and open the app. The packaged desktop app does not need Node.js, pnpm, or any command-line runtime.
+3. On first launch, open **Settings → Models**, enter your DeepSeek API key, and save it.
+4. Choose a workspace, return to the conversation view, and send your first message.
+
+Harness manages the API key locally through its credentials feature; it is not written to the repository. You can skip model setup if you only want to inspect the interface.
+
 ## Features
 
-- **Full feature parity**: the renderer is the official harness web GUI — sessions, tool calls, the workspace/folder flow, model and API-key settings, byte-identical to `dsh web`;
-- **Zero runtime dependencies**: Electron bundles Node; all dependencies and the frontend dist ship inside the installer;
+- **Full feature set**: the renderer is the official harness web GUI — sessions, tool calls, the workspace/folder flow, model and API-key settings, using the same plugin and API composition as `dsh web`;
+- **Zero runtime dependencies**: Electron bundles Node; all runtime dependencies and the frontend dist ship inside the installer;
 - **Native feel**: application icon, OS-native directory picker, native menus, single-instance, graceful harness shutdown on quit;
 - **Cross-platform**: macOS (Intel / Apple Silicon / Universal), Windows, Linux packaging targets;
 - **Permission guidance**: startup capability checks (macOS Full Disk Access / Seatbelt, Windows PowerShell) with one-time reminders and links into System Settings;
 - **Own data**: sessions, settings and credentials persist under `~/.dsh`; reopening shows all previous runs.
+
+## Installation
+
+Download the matching installer from [GitHub Releases](https://github.com/paitony/dsh-work/releases): `DeepSeek Harness-*-mac-arm64.dmg` for Apple Silicon, `DeepSeek Harness-*-mac-x64.dmg` for Intel Macs, `DeepSeek Harness-*-mac-universal.dmg` for either Mac architecture, `DeepSeek Harness-*-win-x64.exe` for Windows, or the x64 AppImage/deb package for Linux. Official releases must be code-signed and notarized; unsigned local builds may be blocked by Gatekeeper or SmartScreen.
 
 ## Building from source
 
@@ -34,10 +47,6 @@ cd dsh-work
 pnpm install        # install all workspace dependencies (including Electron)
 pnpm run build      # build all harness libraries + the web frontend dist
 ```
-
-## Installation
-
-Download the matching installer from [GitHub Releases](https://github.com/paitony/dsh-work/releases): `DeepSeek Harness-*-mac-arm64.dmg` for Apple Silicon, `DeepSeek Harness-*-mac-x64.dmg` for Intel Macs, `DeepSeek Harness-*-mac-universal.dmg` for either Mac architecture, `DeepSeek Harness-*-win-x64.exe` for Windows, or the x64 AppImage/deb package for Linux. Official releases must be code-signed and notarized; unsigned local builds may be blocked by Gatekeeper or SmartScreen.
 
 ### Development
 
@@ -137,7 +146,7 @@ See [docs/architecture.md](docs/architecture.md) for the detailed layering and r
 
 ## Data & persistence
 
-User data lives in `~/.dsh` (shared with the `dsh` CLI): `sessions/`, `settings.yaml`, `storages/`, `profiles/`. Reopening the app shows previous sessions and workspaces automatically.
+User data lives in `~/.dsh`, shared with the `dsh` CLI. Harness plugins manage sessions, settings, credentials, and workspaces there; reopening the app shows previous sessions and workspaces automatically. Never commit your `~/.dsh` directory or an API key.
 
 ## License
 

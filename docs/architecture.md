@@ -96,7 +96,7 @@ dsh-work/
 ## 关键设计决策
 
 - **进程内引导**：Electron 主进程直接引导 harness（复用 `dsh-app-boot`），无子进程、无端口解析；
-- **渲染层零改动**：加载 harness 官方 Web 前端，所有功能（会话、工具、文件夹、模型设置）与 `dsh web` 逐字节一致；
+- **渲染层复用**：加载 harness 官方 Web 前端，与 `dsh web` 共用会话、工具、文件夹和模型设置等插件与接口；
 - **目录选择器走能力缝**：通过 `directory-picker` capability 复用 Harness 的平台原生 provider，桌面壳不再复制一套 picker 实现；
 - **Electron 环境适配**：`--expose-internals` + execArgv 镜像（vendored loader 依赖 Node 内部模块）；
 - **打包适配**：完整依赖闭包 asarUnpack（符号链接无法穿越 asar）、预设随包挂载、`singleArchFiles` 处理原生模块的双架构合并。
