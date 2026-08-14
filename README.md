@@ -81,7 +81,7 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + de
 
 - **macOS**：需要 Developer ID 证书（`CSC_LINK` / `CSC_KEY_PASSWORD`）签名并公证，否则 Gatekeeper 拦截下载与启动。参见 [electron-builder 签名文档](https://www.electron.build/code-signing)；
 - **Windows**：需要代码签名证书（`CSC_LINK` 或 signtool）消除 SmartScreen 警告；
-- **CI**：GitHub Actions 会在 macOS、Windows、Linux runner 上分别构建和验收；推送 `vX.Y.Z` 或 `vX.Y.Z-rc.N` 标签会按标签版本创建 GitHub Release，具体目标和签名 secrets 以 `.github/workflows/` 和 `docs/building.md` 为准。
+- **CI**：GitHub Actions 会在 macOS、Windows、Linux runner 上分别构建和验收；推送 `vX.Y.Z` 或 `vX.Y.Z-rc.N` 标签会按标签版本创建 GitHub Release，带 `-rc.N` 的版本会标记为预发布版本，具体目标和签名 secrets 以 `.github/workflows/` 和 `docs/building.md` 为准。
 
 <details>
 <summary>面向开发者：内置 Plugins 能力清单</summary>

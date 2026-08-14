@@ -64,7 +64,7 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:win            # Windows NSIS instal
 pnpm --filter @deepseek-ai/dsh-desktop dist:linux          # Linux AppImage + deb
 ```
 
-Artifacts land in `apps/desktop/release/`. macOS releases are separate arm64 and x64 packages because the app includes architecture-specific native modules that cannot be safely merged into a Universal binary. Release distribution requires code signing and notarization (macOS Developer ID, Windows certificate); unsigned builds are blocked by Gatekeeper / SmartScreen. See `docs/building.md` for CI and signing guidance.
+Artifacts land in `apps/desktop/release/`. macOS releases are separate arm64 and x64 packages because the app includes architecture-specific native modules that cannot be safely merged into a Universal binary. Release distribution requires code signing and notarization (macOS Developer ID, Windows certificate); unsigned builds are blocked by Gatekeeper / SmartScreen. Pushing a `vX.Y.Z` or `vX.Y.Z-rc.N` tag starts GitHub Actions; `-rc.N` releases are marked as pre-releases. See `docs/building.md` for CI and signing guidance.
 
 ## Architecture
 

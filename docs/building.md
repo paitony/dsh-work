@@ -83,15 +83,15 @@ pnpm --filter @deepseek-ai/dsh-desktop dist:mac:arm64 # Apple Silicon；Intel �
 
 ## 发布到 Releases
 
-发布流程由 tag 驱动。tag 必须使用 `vX.Y.Z` 或 `vX.Y.Z-预发布标识` 格式；workflow 会把去掉 `v` 的版本号显式传给 electron-builder，所以安装包文件名和应用版本都跟随 tag，而不是读取旧的 workspace 版本号。
+发布流程由 tag 驱动。tag 必须使用 `vX.Y.Z` 或 `vX.Y.Z-预发布标识` 格式；workflow 会把去掉 `v` 的版本号显式传给 electron-builder，所以安装包文件名和应用版本都跟随 tag，而不是读取旧的 workspace 版本号。版本号包含连字符时，GitHub Release 会自动标记为预发布版本。
 
 ```sh
 # 在 main 上完成检查并提交代码后
 git checkout main
 git pull --ff-only origin main
 git push origin main
-git tag -a v0.1.0-rc.9 -m "release: v0.1.0-rc.9"
-git push origin v0.1.0-rc.9
+git tag -a v0.1.0-rc.10 -m "release: v0.1.0-rc.10"
+git push origin v0.1.0-rc.10
 ```
 
 仓库中的 `.github/workflows/release.yml` 已把这一步自动化：推送 `v*` 标签后，在 macOS、Windows、Linux runner 上分别构建目标包，下载所有产物并创建 GitHub Release。提供签名和公证 secrets 时，electron-builder 会在对应平台执行正式签名；未提供时仍会生成可用于内部验收的未签名包。
