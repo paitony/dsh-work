@@ -77,7 +77,8 @@ dsh-work/
 │   ├── desktop/          # 本仓库：Electron 桌面壳
 │   │   ├── src/          #   main / boot / preload / permissions / window-policy
 │   │   ├── config/       #   agent-presets（standard/code/cordis/minimal）
-│   │   └── tests/        #   无头冒烟测试
+│   │   ├── tests/        #   smoke（无头端到端）/ lifecycle / window-policy
+│   │   └── icon.png      #   跨平台应用图标
 │   ├── cli/              # dsh CLI（dsh web 等）
 │   └── web/              # Web 前端构建入口（Vite）
 ├── packages/             # harness 全部插件包（按能力分组）

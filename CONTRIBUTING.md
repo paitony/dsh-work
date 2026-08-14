@@ -12,11 +12,15 @@ pnpm --filter @deepseek-ai/dsh-desktop dev
 
 ## 代码结构
 
-- `apps/desktop/src/main.ts` — Electron 主进程（窗口、菜单、生命周期、权限检测）；
-- `apps/desktop/src/boot.ts` — 进程内引导 harness（profile 组合、overlays、asar 链接修复）；
-- `apps/desktop/src/picker.ts` — `directory-picker` 能力缝的 Electron 后端；
-- `apps/desktop/src/permissions.ts` — macOS / Windows 能力检测与提醒；
-- `apps/desktop/tests/smoke.ts` — 无头冒烟测试。
+- `apps/desktop/src/main.ts` — Electron 主进程（窗口、菜单、单实例、导航安全、生命周期、权限检测）；
+- `apps/desktop/src/boot.ts` — 进程内引导 harness（profile 组合、桌面 overlays、asar 链接修复、错误解包）；
+- `apps/desktop/src/preload.cts` — 沙箱 preload（暴露最小 `dshDesktop` 表面）；
+- `apps/desktop/src/permissions.ts` — macOS / Windows 能力检测与一次性权限提醒；
+- `apps/desktop/src/window-policy.ts` — loopback 导航与允许的外部 URL 策略；
+- `apps/desktop/tests/` — `smoke.ts` 无头端到端、`lifecycle.ts` 生命周期、`window-policy.ts` 窗口策略；
+- `apps/desktop/config/agent-presets/` — 内置 agent 预设（standard/code/cordis/minimal）。
+
+目录选择器通过 harness 的 `directory-picker` capability 复用平台原生 provider（macOS osascript、Windows IFileOpenDialog、Linux zenity/kdialog），桌面壳不再维护独立的 picker 实现。
 
 ## 提交前检查
 
